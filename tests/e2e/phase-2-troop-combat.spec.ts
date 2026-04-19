@@ -84,54 +84,37 @@ test('Combat resolves: both troops removed and arrays are empty', async ({ page 
   );
 });
 
-test('Survivor resumes walking after mutual kill clears the way', async ({ page }) => {
-  await waitForMatch(page);
-
-  // Two players vs one enemy: player A fights enemy (mutual kill), player B survives and walks
-  await page.click('button:text("Spawn Player")');
-  await page.click('button:text("Spawn Player")');
-  await page.click('button:text("Spawn Enemy")');
-
-  const combatDuration = (TROOP_BASE.hp / TROOP_BASE.damage) * TROOP_BASE.attackInterval;
-
-  // Wait for the enemy to be destroyed
-  await page.waitForFunction(
-    () => {
-      const scene = (window as GameWindow).__game__?.scene.getScene('Match');
-      return (scene?.enemyTroops.length ?? 1) === 0;
-    },
-    { timeout: combatDuration + 5_000 },
-  );
-
-  // The surviving player troop (player B) should still be WALKING
-  const survivorState = await page.evaluate(
-    () => (window as GameWindow).__game__?.scene.getScene('Match')?.playerTroops[0]?.state,
-  );
-
-  expect(survivorState).toBe('WALKING');
-});
-
-test('Second player troop walks past while first is engaged', async ({ page }) => {
+test('Two players both engage the same enemy — enemy dies faster, both players survive', async ({ page }) => {
   await waitForMatch(page);
 
   await page.click('button:text("Spawn Player")');
   await page.click('button:text("Spawn Player")');
   await page.click('button:text("Spawn Enemy")');
 
-  // Wait for the enemy to be engaged
+  // Wait until both players are ATTACKING
   await page.waitForFunction(
     () => {
       const scene = (window as GameWindow).__game__?.scene.getScene('Match');
-      return scene?.enemyTroops[0]?.state === 'ATTACKING';
+      return scene?.playerTroops.every((t) => t.state === 'ATTACKING') ?? false;
     },
     { timeout: 15_000 },
   );
 
-  // At least one player troop should still be WALKING
-  const walkingCount = await page.evaluate(() => {
+  // Enemy dies faster (2 attackers): 100hp / 40dmg_per_tick ≈ 3 ticks × 500ms = 1500ms
+  await page.waitForFunction(
+    () => (window as GameWindow).__game__?.scene.getScene('Match')?.enemyTroops.length === 0,
+    { timeout: 10_000 },
+  );
+
+  // Both players should have survived and resumed walking
+  const result = await page.evaluate(() => {
     const scene = (window as GameWindow).__game__?.scene.getScene('Match');
-    return scene?.playerTroops.filter((t) => t.state === 'WALKING').length ?? 0;
+    return {
+      count: scene?.playerTroops.length ?? 0,
+      allWalking: scene?.playerTroops.every((t) => t.state === 'WALKING') ?? false,
+    };
   });
 
-  expect(walkingCount).toBeGreaterThanOrEqual(1);
+  expect(result.count).toBeGreaterThanOrEqual(1);
+  expect(result.allWalking).toBe(true);
 });

@@ -10,16 +10,38 @@ function overlaps(a: Troop, b: Troop): boolean {
 
 export class CombatSystem {
   update(delta: number, playerTroops: Troop[], enemyTroops: Troop[]): void {
-    // Step 1: Pair overlapping WALKING troops from opposite sides
+    // Step 1: Engage any overlapping opponent (regardless of their combat state).
+    // A WALKING troop always stops when it touches an opponent. If the opponent
+    // is already engaged, only the new attacker changes state — the opponent
+    // keeps its existing target. A symmetric enemy pass ensures a re-WALKING
+    // enemy re-engages instead of walking away after its original target dies.
     for (const player of playerTroops) {
       if (player.state !== 'WALKING') continue;
       for (const enemy of enemyTroops) {
-        if (enemy.state !== 'WALKING') continue;
+        if (enemy.state === 'DEAD') continue;
         if (overlaps(player, enemy)) {
           player.state = 'ATTACKING';
           player.currentTarget = enemy;
+          if (enemy.state === 'WALKING') {
+            enemy.state = 'ATTACKING';
+            enemy.currentTarget = player;
+          }
+          break;
+        }
+      }
+    }
+
+    for (const enemy of enemyTroops) {
+      if (enemy.state !== 'WALKING') continue;
+      for (const player of playerTroops) {
+        if (player.state === 'DEAD') continue;
+        if (overlaps(enemy, player)) {
           enemy.state = 'ATTACKING';
           enemy.currentTarget = player;
+          if (player.state === 'WALKING') {
+            player.state = 'ATTACKING';
+            player.currentTarget = enemy;
+          }
           break;
         }
       }
