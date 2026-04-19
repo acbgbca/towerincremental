@@ -1,5 +1,7 @@
 import type { Troop } from '../entities/Troop';
-import { TROOP_BASE } from '../../config/gameConfig';
+import type { Tower } from '../entities/Tower';
+import type { Damageable } from '../types';
+import { TROOP_BASE, TOWER } from '../../config/gameConfig';
 
 function overlaps(a: Troop, b: Troop): boolean {
   return (
@@ -8,8 +10,16 @@ function overlaps(a: Troop, b: Troop): boolean {
   );
 }
 
+function atTower(troop: Troop, tower: Tower, direction: 1 | -1): boolean {
+  if (direction === 1) {
+    return troop.x + troop.width / 2 + TOWER.attackTargetingMargin >= tower.x - tower.width / 2;
+  } else {
+    return troop.x - troop.width / 2 - TOWER.attackTargetingMargin <= tower.x + tower.width / 2;
+  }
+}
+
 export class CombatSystem {
-  update(delta: number, playerTroops: Troop[], enemyTroops: Troop[]): void {
+  update(delta: number, playerTroops: Troop[], enemyTroops: Troop[], playerTower: Tower, enemyTower: Tower): void {
     // Step 1: Engage any overlapping opponent (regardless of their combat state).
     // A WALKING troop always stops when it touches an opponent. If the opponent
     // is already engaged, only the new attacker changes state — the opponent
@@ -47,8 +57,29 @@ export class CombatSystem {
       }
     }
 
+    // Step 1b: Tower targeting — walking troops that reach the opposing tower
+    if (enemyTower.isAlive()) {
+      for (const player of playerTroops) {
+        if (player.state !== 'WALKING') continue;
+        if (atTower(player, enemyTower, 1)) {
+          player.state = 'ATTACKING';
+          player.currentTarget = enemyTower;
+        }
+      }
+    }
+
+    if (playerTower.isAlive()) {
+      for (const enemy of enemyTroops) {
+        if (enemy.state !== 'WALKING') continue;
+        if (atTower(enemy, playerTower, -1)) {
+          enemy.state = 'ATTACKING';
+          enemy.currentTarget = playerTower;
+        }
+      }
+    }
+
     // Step 2: Collect all damage to apply this tick (enables mutual kills)
-    const pendingDamage = new Map<Troop, number>();
+    const pendingDamage = new Map<Damageable, number>();
     for (const troop of [...playerTroops, ...enemyTroops]) {
       if (troop.state !== 'ATTACKING' || !troop.currentTarget) continue;
       troop.attackTimer += delta;
@@ -58,13 +89,13 @@ export class CombatSystem {
         troop.attackTimer = 0;
       }
     }
-    for (const [troop, damage] of pendingDamage) {
-      troop.takeDamage(damage);
+    for (const [target, damage] of pendingDamage) {
+      target.takeDamage(damage);
     }
 
     // Step 3: Release survivors whose target just died
     for (const troop of [...playerTroops, ...enemyTroops]) {
-      if (troop.state === 'ATTACKING' && troop.currentTarget?.state === 'DEAD') {
+      if (troop.state === 'ATTACKING' && troop.currentTarget && !troop.currentTarget.isAlive()) {
         troop.state = 'WALKING';
         troop.currentTarget = null;
         troop.attackTimer = 0;

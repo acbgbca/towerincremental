@@ -9,3 +9,12 @@ export interface TroopStats {
   damage: number;
   attackInterval: number;
 }
+
+export interface Damageable {
+  takeDamage(n: number): void;
+  isAlive(): boolean;
+}
+
+export interface MatchResult {
+  winner: 'player' | 'enemy';
+}

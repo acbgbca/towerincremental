@@ -15,3 +15,8 @@ export const TROOP_BASE: TroopStats = {
   damage: 20,
   attackInterval: 500,
 };
+
+export const TOWER = {
+  maxHp: 500,
+  attackTargetingMargin: 4,
+};

@@ -2,11 +2,11 @@ import Phaser from 'phaser';
 import { BOARD_WIDTH, TROOP_BASE } from '../../config/gameConfig';
 import { drawTroop, drawTroopHpBar, type HpBar } from '../../render/shapes';
 import type { Side } from '../../render/shapes';
-import type { TroopType, TroopState } from '../types';
+import type { TroopType, TroopState, Damageable } from '../types';
 
 const HP_BAR_Y_OFFSET = TROOP_BASE.height / 2 + 6;
 
-export class Troop {
+export class Troop implements Damageable {
   private rect: Phaser.GameObjects.Rectangle;
   private hpBar: HpBar;
   private direction: number;
@@ -15,7 +15,7 @@ export class Troop {
   state: TroopState = 'WALKING';
   currentHp: number;
   readonly maxHp: number;
-  currentTarget: Troop | null = null;
+  currentTarget: Damageable | null = null;
   attackTimer: number = 0;
 
   constructor(scene: Phaser.Scene, side: Side, _type: TroopType, x: number, y: number) {
@@ -41,6 +41,10 @@ export class Troop {
 
   get height(): number {
     return TROOP_BASE.height;
+  }
+
+  isAlive(): boolean {
+    return this.state !== 'DEAD';
   }
 
   takeDamage(amount: number): void {

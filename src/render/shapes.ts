@@ -31,3 +31,16 @@ export function drawTroopHpBar(scene: Phaser.Scene, x: number, y: number): HpBar
   fill.setOrigin(0, 0.5);
   return { bg, fill };
 }
+
+export function drawTowerHpBar(scene: Phaser.Scene, side: Side): HpBar {
+  const BAR_HEIGHT = 6;
+  const x =
+    side === 'player'
+      ? TOWER_MARGIN + TOWER_WIDTH / 2
+      : BOARD_WIDTH - TOWER_MARGIN - TOWER_WIDTH / 2;
+  const y = BOARD_HEIGHT / 2 - TOWER_HEIGHT / 2 - 10;
+  const bg = scene.add.rectangle(x, y, TOWER_WIDTH, BAR_HEIGHT, 0x333333);
+  const fill = scene.add.rectangle(x - TOWER_WIDTH / 2, y, TOWER_WIDTH, BAR_HEIGHT, 0x00aa00);
+  fill.setOrigin(0, 0.5);
+  return { bg, fill };
+}
