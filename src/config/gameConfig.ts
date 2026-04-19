@@ -11,7 +11,7 @@ export const TROOP_BASE: TroopStats = {
   walkSpeed: 80,
   width: 24,
   height: 36,
-  hp: 0,
-  damage: 0,
-  attackInterval: 0,
+  hp: 100,
+  damage: 20,
+  attackInterval: 500,
 };

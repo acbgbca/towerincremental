@@ -3,11 +3,13 @@ import { FIELD } from '../../render/palette';
 import { drawTower } from '../../render/shapes';
 import { BOARD_WIDTH, BOARD_HEIGHT, TOWER_MARGIN, TOWER_WIDTH } from '../../config/gameConfig';
 import { Troop } from '../entities/Troop';
+import { CombatSystem } from '../systems/CombatSystem';
 import type { TroopType } from '../types';
 
 export class MatchScene extends Phaser.Scene {
   playerTroops: Troop[] = [];
   enemyTroops: Troop[] = [];
+  private combatSystem = new CombatSystem();
 
   constructor() {
     super({ key: 'Match' });
@@ -34,15 +36,19 @@ export class MatchScene extends Phaser.Scene {
   }
 
   update(_time: number, delta: number): void {
-    this.playerTroops = this.updateTroops(this.playerTroops, delta);
-    this.enemyTroops = this.updateTroops(this.enemyTroops, delta);
+    this.playerTroops.forEach((t) => t.update(delta));
+    this.enemyTroops.forEach((t) => t.update(delta));
+
+    this.combatSystem.update(delta, this.playerTroops, this.enemyTroops);
+
+    this.playerTroops = this.cleanupTroops(this.playerTroops);
+    this.enemyTroops = this.cleanupTroops(this.enemyTroops);
   }
 
-  private updateTroops(troops: Troop[], delta: number): Troop[] {
-    return troops.filter((troop) => {
-      troop.update(delta);
-      if (troop.isOutOfBounds()) {
-        troop.destroy();
+  private cleanupTroops(troops: Troop[]): Troop[] {
+    return troops.filter((t) => {
+      if (t.state === 'DEAD' || t.isOutOfBounds()) {
+        t.destroy();
         return false;
       }
       return true;

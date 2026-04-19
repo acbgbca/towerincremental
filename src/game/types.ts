@@ -1,4 +1,5 @@
 export type TroopType = 'base';
+export type TroopState = 'WALKING' | 'ATTACKING' | 'DEAD';
 
 export interface TroopStats {
   walkSpeed: number;

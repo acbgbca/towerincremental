@@ -18,3 +18,16 @@ export function drawTroop(scene: Phaser.Scene, side: Side, x: number, y: number)
   const color = side === 'player' ? TROOP_PLAYER : TROOP_ENEMY;
   return scene.add.rectangle(x, y, TROOP_BASE.width, TROOP_BASE.height, color);
 }
+
+export interface HpBar {
+  bg: Phaser.GameObjects.Rectangle;
+  fill: Phaser.GameObjects.Rectangle;
+}
+
+export function drawTroopHpBar(scene: Phaser.Scene, x: number, y: number): HpBar {
+  const BAR_HEIGHT = 4;
+  const bg = scene.add.rectangle(x, y, TROOP_BASE.width, BAR_HEIGHT, 0x333333);
+  const fill = scene.add.rectangle(x - TROOP_BASE.width / 2, y, TROOP_BASE.width, BAR_HEIGHT, 0x00aa00);
+  fill.setOrigin(0, 0.5);
+  return { bg, fill };
+}
