@@ -1,18 +1,22 @@
 import Phaser from 'phaser';
 import { FIELD } from '../../render/palette';
-import { BOARD_WIDTH, BOARD_HEIGHT, TOWER_MARGIN, TOWER_WIDTH } from '../../config/gameConfig';
+import { BOARD_WIDTH, BOARD_HEIGHT, TOWER_MARGIN, TOWER_WIDTH, TROOP_BASE } from '../../config/gameConfig';
 import { Troop } from '../entities/Troop';
 import { Tower } from '../entities/Tower';
 import { CombatSystem } from '../systems/CombatSystem';
+import { IncomeSystem } from '../systems/IncomeSystem';
 import { MatchResultOverlay } from '../../ui/MatchResultOverlay';
-import type { TroopType, MatchResult } from '../types';
+import { Hud } from '../../ui/Hud';
+import type { TroopType, MatchResult, MatchState } from '../types';
 
 export class MatchScene extends Phaser.Scene {
   playerTroops: Troop[] = [];
   enemyTroops: Troop[] = [];
   playerTower!: Tower;
   enemyTower!: Tower;
+  matchState: MatchState = { money: 0 };
   private combatSystem = new CombatSystem();
+  private incomeSystem!: IncomeSystem;
   private overlay!: MatchResultOverlay;
   private matchEnded = false;
 
@@ -25,6 +29,13 @@ export class MatchScene extends Phaser.Scene {
     this.playerTower = new Tower(this, 'player');
     this.enemyTower = new Tower(this, 'enemy');
     this.overlay = new MatchResultOverlay(() => this.resetMatch());
+    this.incomeSystem = new IncomeSystem(this.matchState);
+    new Hud(this.matchState, () => {
+      if (this.matchState.money >= TROOP_BASE.cost) {
+        this.matchState.money -= TROOP_BASE.cost;
+        this.spawnTroop('player', 'base');
+      }
+    });
     this.matchEnded = false;
   }
 
@@ -46,6 +57,7 @@ export class MatchScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     if (this.matchEnded) return;
 
+    this.incomeSystem.update(delta);
     this.playerTroops.forEach((t) => t.update(delta));
     this.enemyTroops.forEach((t) => t.update(delta));
 
@@ -68,6 +80,7 @@ export class MatchScene extends Phaser.Scene {
     this.enemyTroops = [];
     this.playerTower.resetHp();
     this.enemyTower.resetHp();
+    this.matchState.money = 0;
     this.matchEnded = false;
   }
 

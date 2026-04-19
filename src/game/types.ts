@@ -8,6 +8,11 @@ export interface TroopStats {
   hp: number;
   damage: number;
   attackInterval: number;
+  cost: number;
+}
+
+export interface MatchState {
+  money: number;
 }
 
 export interface Damageable {

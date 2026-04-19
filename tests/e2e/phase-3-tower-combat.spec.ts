@@ -28,16 +28,20 @@ async function waitForMatch(page: Page) {
   );
 }
 
+function spawnPlayer(page: Page) {
+  return page.evaluate(() =>
+    (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'),
+  );
+}
+
 test('Player troop reaches enemy tower and destroys it — "You won" overlay appears', async ({ page }) => {
   await waitForMatch(page);
 
-  // Spawn multiple player troops to kill the tower within test timeout
   for (let i = 0; i < 5; i++) {
-    await page.click('button:text("Spawn Player")');
+    await spawnPlayer(page);
   }
 
-  // Wait for enemy tower HP to hit 0
-  const hitsToKill = TOWER.maxHp / 20; // 25 hits per troop
+  const hitsToKill = TOWER.maxHp / 20;
   const timePerHit = 500;
   const walkTime = ((BOARD_WIDTH - TOWER_MARGIN - TOWER_WIDTH) - (TOWER_MARGIN + TOWER_WIDTH)) / 80 * 1000;
   const estimatedMs = walkTime + hitsToKill * timePerHit;
@@ -50,7 +54,6 @@ test('Player troop reaches enemy tower and destroys it — "You won" overlay app
     { timeout: estimatedMs + 10_000 },
   );
 
-  // Overlay should be visible with "You won!"
   await expect(page.locator('#match-result-overlay')).toBeVisible();
   await expect(page.locator('#match-result-overlay p')).toHaveText('You won!');
 });
@@ -58,9 +61,8 @@ test('Player troop reaches enemy tower and destroys it — "You won" overlay app
 test('Restart resets both towers to full HP and clears all troops', async ({ page }) => {
   await waitForMatch(page);
 
-  // Kill the enemy tower
   for (let i = 0; i < 5; i++) {
-    await page.click('button:text("Spawn Player")');
+    await spawnPlayer(page);
   }
 
   await page.waitForFunction(
@@ -70,10 +72,8 @@ test('Restart resets both towers to full HP and clears all troops', async ({ pag
 
   await page.click('#match-result-overlay button');
 
-  // Overlay should be hidden
   await expect(page.locator('#match-result-overlay')).toBeHidden();
 
-  // Both towers back at full HP
   const state = await page.evaluate(() => {
     const scene = (window as GameWindow).__game__?.scene.getScene('Match');
     return {
@@ -89,8 +89,8 @@ test('Restart resets both towers to full HP and clears all troops', async ({ pag
   expect(state.playerTroops).toBe(0);
   expect(state.enemyTroops).toBe(0);
 
-  // Spawn buttons should work after restart
-  await page.click('button:text("Spawn Player")');
+  // Spawn still works after restart
+  await spawnPlayer(page);
   const count = await page.evaluate(
     () => (window as GameWindow).__game__?.scene.getScene('Match')?.playerTroops?.length ?? 0,
   );
@@ -116,10 +116,9 @@ test('Enemy troop kills player tower — "You lost" overlay appears', async ({ p
 test('Troop engaged with an enemy troop does not damage the tower', async ({ page }) => {
   await waitForMatch(page);
 
-  await page.click('button:text("Spawn Player")');
+  await spawnPlayer(page);
   await page.click('button:text("Spawn Enemy")');
 
-  // Wait until both are fighting each other
   await page.waitForFunction(
     () => {
       const scene = (window as GameWindow).__game__?.scene.getScene('Match');
@@ -131,7 +130,6 @@ test('Troop engaged with an enemy troop does not damage the tower', async ({ pag
     { timeout: 20_000 },
   );
 
-  // Capture tower HPs while the troops fight
   const hpBefore = await page.evaluate(() => {
     const scene = (window as GameWindow).__game__?.scene.getScene('Match');
     return {
@@ -140,7 +138,6 @@ test('Troop engaged with an enemy troop does not damage the tower', async ({ pag
     };
   });
 
-  // Wait one full attack interval and check towers are still untouched
   await page.waitForTimeout(600);
 
   const hpAfter = await page.evaluate(() => {

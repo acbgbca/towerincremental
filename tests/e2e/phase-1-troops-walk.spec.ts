@@ -28,7 +28,7 @@ test('Match scene is active after boot', async ({ page }) => {
 test('Spawn Player creates a troop walking right', async ({ page }) => {
   await waitForMatch(page);
 
-  await page.click('button:text("Spawn Player")');
+  await page.evaluate(() => (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'));
 
   const count = await page.evaluate(
     () => (window as GameWindow).__game__?.scene.getScene('Match')?.playerTroops.length ?? 0,
@@ -65,7 +65,7 @@ test('Spawn Enemy creates a troop walking left', async ({ page }) => {
 test('Troops despawn after leaving play area', async ({ page }) => {
   await waitForMatch(page);
 
-  await page.click('button:text("Spawn Player")');
+  await page.evaluate(() => (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'));
   await page.click('button:text("Spawn Enemy")');
 
   await page.waitForFunction(
@@ -80,9 +80,9 @@ test('Troops despawn after leaving play area', async ({ page }) => {
 test('Multiple rapid spawns work independently', async ({ page }) => {
   await waitForMatch(page);
 
-  await page.click('button:text("Spawn Player")');
-  await page.click('button:text("Spawn Player")');
-  await page.click('button:text("Spawn Player")');
+  await page.evaluate(() => (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'));
+  await page.evaluate(() => (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'));
+  await page.evaluate(() => (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'));
 
   const count = await page.evaluate(
     () => (window as GameWindow).__game__?.scene.getScene('Match')?.playerTroops.length ?? 0,

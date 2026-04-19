@@ -29,7 +29,7 @@ async function waitForMatch(page: Page) {
 test('Player and enemy troops stop and attack when they meet', async ({ page }) => {
   await waitForMatch(page);
 
-  await page.click('button:text("Spawn Player")');
+  await page.evaluate(() => (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'));
   await page.click('button:text("Spawn Enemy")');
 
   // Wait until both are ATTACKING
@@ -68,7 +68,7 @@ test('Player and enemy troops stop and attack when they meet', async ({ page }) 
 test('Combat resolves: both troops removed and arrays are empty', async ({ page }) => {
   await waitForMatch(page);
 
-  await page.click('button:text("Spawn Player")');
+  await page.evaluate(() => (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'));
   await page.click('button:text("Spawn Enemy")');
 
   // With equal stats: 5 hits × 500ms = 2500ms to mutual kill
@@ -87,8 +87,8 @@ test('Combat resolves: both troops removed and arrays are empty', async ({ page 
 test('Two players both engage the same enemy — enemy dies faster, both players survive', async ({ page }) => {
   await waitForMatch(page);
 
-  await page.click('button:text("Spawn Player")');
-  await page.click('button:text("Spawn Player")');
+  await page.evaluate(() => (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'));
+  await page.evaluate(() => (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('player', 'base'));
   await page.click('button:text("Spawn Enemy")');
 
   // Wait until both players are ATTACKING

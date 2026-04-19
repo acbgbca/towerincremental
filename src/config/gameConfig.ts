@@ -7,6 +7,8 @@ export const TOWER_WIDTH = 60;
 export const TOWER_HEIGHT = 200;
 export const TOWER_MARGIN = 20;
 
+export const INCOME_RATE = 10; // money per second
+
 export const TROOP_BASE: TroopStats = {
   walkSpeed: 80,
   width: 24,
@@ -14,6 +16,7 @@ export const TROOP_BASE: TroopStats = {
   hp: 100,
   damage: 20,
   attackInterval: 500,
+  cost: 25,
 };
 
 export const TOWER = {
