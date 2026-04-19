@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { BootScene } from './game/scenes/BootScene';
+import { MatchScene } from './game/scenes/MatchScene';
 import { BOARD_WIDTH, BOARD_HEIGHT } from './config/gameConfig';
+import { createDebugSpawnButtons } from './ui/DebugSpawnButtons';
 import './styles.css';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -12,10 +14,11 @@ const config: Phaser.Types.Core.GameConfig = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
-  scene: [BootScene],
+  scene: [BootScene, MatchScene],
 };
 
 const game = new Phaser.Game(config);
+createDebugSpawnButtons();
 
 if (import.meta.env.DEV || window.location.search.includes('test')) {
   (window as unknown as Record<string, unknown>)['__game__'] = game;

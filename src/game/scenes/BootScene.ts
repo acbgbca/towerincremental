@@ -15,5 +15,6 @@ export class BootScene extends Phaser.Scene {
     this.add.rectangle(BOARD_WIDTH / 2, BOARD_HEIGHT / 2, BOARD_WIDTH, BOARD_HEIGHT, FIELD);
     this.playerTower = drawTower(this, 'player');
     this.enemyTower = drawTower(this, 'enemy');
+    this.scene.start('Match');
   }
 }
