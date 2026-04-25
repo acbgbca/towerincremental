@@ -5,6 +5,9 @@ type GameWindow = Window & {
 };
 
 export function createDebugSpawnButtons(): void {
+  const search = window.location.search;
+  if (!search.includes('debug') && !search.includes('test')) return;
+
   const container = document.createElement('div');
   container.id = 'debug-spawn';
   container.style.cssText = 'position:fixed;top:8px;left:8px;z-index:100;display:flex;gap:8px;';
