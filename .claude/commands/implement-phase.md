@@ -9,7 +9,7 @@ Keep in mind the following coding pricipals as you implement the changes:
 * Separation of Concerns
 * Single Responsibility Principle.
 
-Once you have completed your work, commit the changes and then ask the user to verify. If they return with a problem then make the necessary changes. Once the user has approved the work merge the change into the 'main' branch.
+If you encounter test failures for the previous stages, start by evaluating the test and working our whether the test is still valid. As we implement additional phases tests in the earlier phases may need to be updated, or they may become redundant and can be removed. Once you have completed your work, commit the changes and then ask the user to verify. If they return with a problem then make the necessary changes. Once the user has approved the work merge the change into the 'main' branch.
 
 Your work is now complete, do not ask to implement another issue.
 
