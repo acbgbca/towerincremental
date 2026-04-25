@@ -68,7 +68,7 @@ test('After winning, enemy troops use upgraded stats', async ({ page }) => {
   await waitForMatch(page);
 
   await triggerPlayerWin(page);
-  await page.click('#match-result-overlay button');
+  await page.click('#upgrade-screen-continue');
 
   await page.evaluate(() =>
     (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('enemy', 'base'),
@@ -118,7 +118,7 @@ test('Reset save button restores enemy level to 1', async ({ page }) => {
   await triggerPlayerWin(page);
   await expect(page.locator('#hud-enemy-level')).toHaveText('Enemy Level: 2');
 
-  await page.click('#match-result-overlay button');
+  await page.click('#upgrade-screen-continue');
   await page.click('#debug-reset-save');
   await page.reload();
   await waitForMatch(page);

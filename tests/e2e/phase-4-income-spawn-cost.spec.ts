@@ -129,7 +129,7 @@ test('Restarting a match resets money to 0', async ({ page }) => {
   );
 
   await page.waitForSelector('#match-result-overlay', { state: 'visible', timeout: 30_000 });
-  await page.click('#match-result-overlay button');
+  await page.click('#upgrade-screen-continue');
 
   const money = await page.evaluate(
     () => (window as GameWindow).__game__?.scene.getScene('Match')?.matchState?.money ?? -1,

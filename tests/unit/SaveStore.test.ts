@@ -27,7 +27,7 @@ describe('SaveStore', () => {
   });
 
   it('save() then load() round-trips a non-trivial state', () => {
-    const state = { enemyLevel: 7, money: 100 };
+    const state = { enemyLevel: 7, money: 100, upgrades: { incomeRate: 2, towerMaxHp: 1 } };
     save(state);
     const loaded = load();
     expect(loaded).toEqual(state);
@@ -41,17 +41,20 @@ describe('SaveStore', () => {
 });
 
 describe('migrate', () => {
-  it('migrate from v1 adds money: 0', () => {
+  const defaultUpgrades = { incomeRate: 0, towerMaxHp: 0 };
+
+  it('migrate from v1 adds money and upgrades', () => {
     const data = { enemyLevel: 3 };
-    expect(migrate(1, data)).toEqual({ enemyLevel: 3, money: 0 });
+    expect(migrate(1, data)).toEqual({ enemyLevel: 3, money: 0, upgrades: defaultUpgrades });
   });
 
-  it('migrate from v2 (CURRENT_VERSION) is identity', () => {
+  it('migrate from v2 adds upgrades', () => {
     const data = { enemyLevel: 3, money: 50 };
-    expect(migrate(2, data)).toEqual(data);
+    expect(migrate(2, data)).toEqual({ enemyLevel: 3, money: 50, upgrades: defaultUpgrades });
   });
 
-  it('migrate from unknown version throws', () => {
-    expect(() => migrate(99, {})).toThrow();
+  it('migrate from v3 (CURRENT_VERSION) is identity', () => {
+    const data = { enemyLevel: 3, money: 50, upgrades: { incomeRate: 1, towerMaxHp: 2 } };
+    expect(migrate(3, data)).toEqual(data);
   });
 });

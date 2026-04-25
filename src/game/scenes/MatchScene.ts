@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { FIELD } from '../../render/palette';
-import { BOARD_WIDTH, BOARD_HEIGHT, TOWER_MARGIN, TOWER_WIDTH, TROOP_BASE, ENEMY_LEVEL_STAT_STEP } from '../../config/gameConfig';
+import { BOARD_WIDTH, BOARD_HEIGHT, TOWER_MARGIN, TOWER_WIDTH, TROOP_BASE, ENEMY_LEVEL_STAT_STEP, INCOME_RATE, TOWER } from '../../config/gameConfig';
 import { LEVEL_1_WAVES, EMPTY_WAVES } from '../../config/enemyWaves';
 import { Troop } from '../entities/Troop';
 import { Tower } from '../entities/Tower';
@@ -8,8 +8,9 @@ import { CombatSystem } from '../systems/CombatSystem';
 import { IncomeSystem } from '../systems/IncomeSystem';
 import { WaveSystem } from '../systems/WaveSystem';
 import { computeReward } from '../systems/RewardSystem';
-import { MatchResultOverlay } from '../../ui/MatchResultOverlay';
+import { UpgradeScreen } from '../../ui/UpgradeScreen';
 import { Hud } from '../../ui/Hud';
+import { UPGRADES, effectiveValue } from '../../config/upgradeConfig';
 import { load as loadSave, save as persistSave } from '../../state/SaveStore';
 import type { GameState } from '../../state/GameState';
 import type { TroopType, TroopStats, MatchResult, MatchState, MatchWaveConfig } from '../types';
@@ -25,8 +26,8 @@ export class MatchScene extends Phaser.Scene {
   private enemyStats!: TroopStats;
   private waveConfig: MatchWaveConfig = LEVEL_1_WAVES;
   private combatSystem = new CombatSystem();
-  private incomeSystem!: IncomeSystem;
-  private overlay!: MatchResultOverlay;
+  incomeSystem!: IncomeSystem;
+  private overlay!: UpgradeScreen;
   private matchEnded = false;
 
   constructor() {
@@ -38,10 +39,12 @@ export class MatchScene extends Phaser.Scene {
     this.enemyStats = this.computeEnemyStats();
 
     this.add.rectangle(BOARD_WIDTH / 2, BOARD_HEIGHT / 2, BOARD_WIDTH, BOARD_HEIGHT, FIELD);
-    this.playerTower = new Tower(this, 'player');
+    const playerMaxHp = effectiveValue(UPGRADES[1], TOWER.maxHp, this.gameState.upgrades.towerMaxHp);
+    const incomeRate  = effectiveValue(UPGRADES[0], INCOME_RATE, this.gameState.upgrades.incomeRate);
+    this.playerTower = new Tower(this, 'player', playerMaxHp);
     this.enemyTower = new Tower(this, 'enemy');
-    this.overlay = new MatchResultOverlay(() => this.resetMatch());
-    this.incomeSystem = new IncomeSystem(this.matchState);
+    this.overlay = new UpgradeScreen(this.gameState, () => this.resetMatch());
+    this.incomeSystem = new IncomeSystem(this.matchState, incomeRate);
     this.waveConfig = window.location.search.includes('test') ? EMPTY_WAVES : LEVEL_1_WAVES;
     this.waveSystem = this.buildWaveSystem();
     new Hud(
@@ -99,12 +102,15 @@ export class MatchScene extends Phaser.Scene {
     this.enemyTroops.forEach((t) => t.destroy());
     this.playerTroops = [];
     this.enemyTroops = [];
-    this.playerTower.resetHp();
+    const playerMaxHp = effectiveValue(UPGRADES[1], TOWER.maxHp, this.gameState.upgrades.towerMaxHp);
+    const incomeRate  = effectiveValue(UPGRADES[0], INCOME_RATE, this.gameState.upgrades.incomeRate);
+    this.playerTower.resetHp(playerMaxHp);
     this.enemyTower.resetHp();
     this.matchState.money = 0;
     this.matchState.troopsDefeated = 0;
     this.matchState.towerDamageDealt = 0;
     this.matchEnded = false;
+    this.incomeSystem = new IncomeSystem(this.matchState, incomeRate);
     this.enemyStats = this.computeEnemyStats();
     this.waveSystem = this.buildWaveSystem();
   }

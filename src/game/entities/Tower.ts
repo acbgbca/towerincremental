@@ -7,13 +7,13 @@ export class Tower implements Damageable {
   private rect: Phaser.GameObjects.Rectangle;
   private hpBar: HpBar;
   readonly side: Side;
-  readonly maxHp: number;
+  maxHp: number;
   currentHp: number;
 
-  constructor(scene: Phaser.Scene, side: Side) {
+  constructor(scene: Phaser.Scene, side: Side, maxHp: number = TOWER.maxHp) {
     this.side = side;
     this.rect = drawTower(scene, side);
-    this.maxHp = TOWER.maxHp;
+    this.maxHp = maxHp;
     this.currentHp = this.maxHp;
     this.hpBar = drawTowerHpBar(scene, side);
     this.refreshHpBar();
@@ -36,7 +36,8 @@ export class Tower implements Damageable {
     return this.currentHp > 0;
   }
 
-  resetHp(): void {
+  resetHp(newMaxHp?: number): void {
+    if (newMaxHp !== undefined) this.maxHp = newMaxHp;
     this.currentHp = this.maxHp;
     this.refreshHpBar();
   }

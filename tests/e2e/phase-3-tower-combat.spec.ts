@@ -70,7 +70,7 @@ test('Restart resets both towers to full HP and clears all troops', async ({ pag
     { timeout: 30_000 },
   );
 
-  await page.click('#match-result-overlay button');
+  await page.click('#upgrade-screen-continue');
 
   await expect(page.locator('#match-result-overlay')).toBeHidden();
 
