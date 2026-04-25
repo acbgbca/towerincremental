@@ -1,5 +1,6 @@
 import type { MatchState } from '../game/types';
 import type { WaveSystem } from '../game/systems/WaveSystem';
+import type { GameState } from '../state/GameState';
 import { TROOP_BASE } from '../config/gameConfig';
 
 export class Hud {
@@ -7,10 +8,12 @@ export class Hud {
   private spawnBtn: HTMLButtonElement;
   private waveTitleEl: HTMLElement;
   private waveSubEl: HTMLElement;
+  private enemyLevelEl: HTMLElement;
   private intervalId: ReturnType<typeof setInterval>;
 
   constructor(
     private state: MatchState,
+    private gameState: GameState,
     onSpawn: () => void,
     private getWaveSystem: () => WaveSystem,
   ) {
@@ -23,6 +26,11 @@ export class Hud {
     this.moneyEl.id = 'hud-money';
     this.moneyEl.style.cssText =
       'position:absolute;top:8px;right:8px;color:white;font:bold 18px monospace;text-shadow:0 0 4px #000;';
+
+    this.enemyLevelEl = document.createElement('div');
+    this.enemyLevelEl.id = 'hud-enemy-level';
+    this.enemyLevelEl.style.cssText =
+      'position:absolute;top:32px;right:8px;color:white;font:14px monospace;text-shadow:0 0 4px #000;';
 
     const waveBox = document.createElement('div');
     waveBox.id = 'hud-wave';
@@ -48,6 +56,7 @@ export class Hud {
     this.spawnBtn.addEventListener('click', onSpawn);
 
     container.appendChild(this.moneyEl);
+    container.appendChild(this.enemyLevelEl);
     container.appendChild(waveBox);
     container.appendChild(this.spawnBtn);
     document.body.appendChild(container);
@@ -58,6 +67,7 @@ export class Hud {
 
   private tick(): void {
     this.moneyEl.textContent = `$${Math.floor(this.state.money)}`;
+    this.enemyLevelEl.textContent = `Enemy Level: ${this.gameState.enemyLevel}`;
     const canAfford = this.state.money >= TROOP_BASE.cost;
     this.spawnBtn.disabled = !canAfford;
     this.renderWaveStatus();

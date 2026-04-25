@@ -1,3 +1,5 @@
+import { reset as resetSave, save } from '../state/SaveStore';
+import { defaultGameState } from '../state/GameState';
 import type { MatchScene } from '../game/scenes/MatchScene';
 
 type GameWindow = Window & {
@@ -18,6 +20,15 @@ export function createDebugSpawnButtons(): void {
     (window as GameWindow).__game__?.scene.getScene('Match')?.spawnTroop('enemy', 'base');
   });
 
+  const resetBtn = document.createElement('button');
+  resetBtn.id = 'debug-reset-save';
+  resetBtn.textContent = 'Reset save';
+  resetBtn.addEventListener('click', () => {
+    resetSave();
+    save(defaultGameState());
+  });
+
   container.appendChild(enemyBtn);
+  container.appendChild(resetBtn);
   document.body.appendChild(container);
 }

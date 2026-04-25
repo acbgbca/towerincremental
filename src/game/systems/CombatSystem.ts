@@ -1,7 +1,7 @@
 import type { Troop } from '../entities/Troop';
 import type { Tower } from '../entities/Tower';
 import type { Damageable } from '../types';
-import { TROOP_BASE, TOWER } from '../../config/gameConfig';
+import { TOWER } from '../../config/gameConfig';
 
 function overlaps(a: Troop, b: Troop): boolean {
   return (
@@ -83,9 +83,9 @@ export class CombatSystem {
     for (const troop of [...playerTroops, ...enemyTroops]) {
       if (troop.state !== 'ATTACKING' || !troop.currentTarget) continue;
       troop.attackTimer += delta;
-      if (troop.attackTimer >= TROOP_BASE.attackInterval) {
+      if (troop.attackTimer >= troop.attackInterval) {
         const current = pendingDamage.get(troop.currentTarget) ?? 0;
-        pendingDamage.set(troop.currentTarget, current + TROOP_BASE.damage);
+        pendingDamage.set(troop.currentTarget, current + troop.damage);
         troop.attackTimer = 0;
       }
     }

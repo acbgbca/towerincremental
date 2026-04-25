@@ -23,3 +23,5 @@ export const TOWER = {
   maxHp: 500,
   attackTargetingMargin: 4,
 };
+
+export const ENEMY_LEVEL_STAT_STEP = { hp: 25, damage: 5 };
