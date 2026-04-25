@@ -27,7 +27,7 @@ describe('SaveStore', () => {
   });
 
   it('save() then load() round-trips a non-trivial state', () => {
-    const state = { enemyLevel: 7 };
+    const state = { enemyLevel: 7, money: 100 };
     save(state);
     const loaded = load();
     expect(loaded).toEqual(state);
@@ -41,9 +41,14 @@ describe('SaveStore', () => {
 });
 
 describe('migrate', () => {
-  it('migrate from CURRENT_VERSION (1) is identity', () => {
+  it('migrate from v1 adds money: 0', () => {
     const data = { enemyLevel: 3 };
-    expect(migrate(1, data)).toEqual(data);
+    expect(migrate(1, data)).toEqual({ enemyLevel: 3, money: 0 });
+  });
+
+  it('migrate from v2 (CURRENT_VERSION) is identity', () => {
+    const data = { enemyLevel: 3, money: 50 };
+    expect(migrate(2, data)).toEqual(data);
   });
 
   it('migrate from unknown version throws', () => {

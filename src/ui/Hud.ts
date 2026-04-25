@@ -5,6 +5,7 @@ import { TROOP_BASE } from '../config/gameConfig';
 
 export class Hud {
   private moneyEl: HTMLElement;
+  private bankEl: HTMLElement;
   private spawnBtn: HTMLButtonElement;
   private waveTitleEl: HTMLElement;
   private waveSubEl: HTMLElement;
@@ -25,7 +26,12 @@ export class Hud {
     this.moneyEl = document.createElement('div');
     this.moneyEl.id = 'hud-money';
     this.moneyEl.style.cssText =
-      'position:absolute;top:8px;right:8px;color:white;font:bold 18px monospace;text-shadow:0 0 4px #000;';
+      'position:absolute;top:8px;left:8px;color:white;font:bold 18px monospace;text-shadow:0 0 4px #000;';
+
+    this.bankEl = document.createElement('div');
+    this.bankEl.id = 'hud-bank';
+    this.bankEl.style.cssText =
+      'position:absolute;top:8px;right:8px;color:#ffd700;font:bold 18px monospace;text-shadow:0 0 4px #000;';
 
     this.enemyLevelEl = document.createElement('div');
     this.enemyLevelEl.id = 'hud-enemy-level';
@@ -56,6 +62,7 @@ export class Hud {
     this.spawnBtn.addEventListener('click', onSpawn);
 
     container.appendChild(this.moneyEl);
+    container.appendChild(this.bankEl);
     container.appendChild(this.enemyLevelEl);
     container.appendChild(waveBox);
     container.appendChild(this.spawnBtn);
@@ -67,6 +74,7 @@ export class Hud {
 
   private tick(): void {
     this.moneyEl.textContent = `$${Math.floor(this.state.money)}`;
+    this.bankEl.textContent = `Bank: $${this.gameState.money}`;
     this.enemyLevelEl.textContent = `Enemy Level: ${this.gameState.enemyLevel}`;
     const canAfford = this.state.money >= TROOP_BASE.cost;
     this.spawnBtn.disabled = !canAfford;

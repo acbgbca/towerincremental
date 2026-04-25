@@ -55,7 +55,7 @@ test('Player troop reaches enemy tower and destroys it — "You won" overlay app
   );
 
   await expect(page.locator('#match-result-overlay')).toBeVisible();
-  await expect(page.locator('#match-result-overlay p')).toHaveText('You won!');
+  await expect(page.locator('#match-result-overlay p').first()).toHaveText('You won!');
 });
 
 test('Restart resets both towers to full HP and clears all troops', async ({ page }) => {
@@ -110,7 +110,7 @@ test('Enemy troop kills player tower — "You lost" overlay appears', async ({ p
   );
 
   await expect(page.locator('#match-result-overlay')).toBeVisible();
-  await expect(page.locator('#match-result-overlay p')).toHaveText('You lost!');
+  await expect(page.locator('#match-result-overlay p').first()).toHaveText('You lost!');
 });
 
 test('Troop engaged with an enemy troop does not damage the tower', async ({ page }) => {

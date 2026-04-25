@@ -3,7 +3,7 @@ import { defaultGameState } from './GameState';
 import { migrate } from './migrations';
 
 const STORAGE_KEY = 'towerincremental:save';
-const CURRENT_VERSION = 1;
+const CURRENT_VERSION = 2;
 
 interface Saved<T> {
   version: number;

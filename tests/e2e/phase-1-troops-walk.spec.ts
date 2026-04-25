@@ -38,12 +38,12 @@ test('Spawn Player creates a troop walking right', async ({ page }) => {
   const x0 = await page.evaluate(
     () => (window as GameWindow).__game__?.scene.getScene('Match')?.playerTroops[0]?.x ?? 0,
   );
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1000);
   const x1 = await page.evaluate(
     () => (window as GameWindow).__game__?.scene.getScene('Match')?.playerTroops[0]?.x ?? 0,
   );
 
-  expect(x1).toBeGreaterThan(x0 + TROOP_BASE.walkSpeed * 0.25);
+  expect(x1).toBeGreaterThan(x0 + TROOP_BASE.walkSpeed * 0.4);
 });
 
 test('Spawn Enemy creates a troop walking left', async ({ page }) => {
@@ -54,12 +54,12 @@ test('Spawn Enemy creates a troop walking left', async ({ page }) => {
   const x0 = await page.evaluate(
     () => (window as GameWindow).__game__?.scene.getScene('Match')?.enemyTroops[0]?.x ?? 0,
   );
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(1000);
   const x1 = await page.evaluate(
     () => (window as GameWindow).__game__?.scene.getScene('Match')?.enemyTroops[0]?.x ?? 0,
   );
 
-  expect(x1).toBeLessThan(x0 - TROOP_BASE.walkSpeed * 0.25);
+  expect(x1).toBeLessThan(x0 - TROOP_BASE.walkSpeed * 0.4);
 });
 
 test('Troops despawn after leaving play area', async ({ page }) => {

@@ -13,6 +13,8 @@ export interface TroopStats {
 
 export interface MatchState {
   money: number;
+  troopsDefeated: number;
+  towerDamageDealt: number;
 }
 
 export interface Damageable {

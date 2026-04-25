@@ -1,6 +1,7 @@
 export class MatchResultOverlay {
   private el: HTMLDivElement;
   private message: HTMLParagraphElement;
+  private rewardEl: HTMLParagraphElement;
 
   constructor(onRestart: () => void) {
     const existing = document.getElementById('match-result-overlay');
@@ -15,6 +16,10 @@ export class MatchResultOverlay {
     this.message = document.createElement('p');
     this.message.style.cssText = 'color:#fff;font-size:48px;font-weight:bold;margin:0;';
 
+    this.rewardEl = document.createElement('p');
+    this.rewardEl.id = 'match-result-reward';
+    this.rewardEl.style.cssText = 'color:#ffd700;font-size:28px;font-weight:bold;margin:0;';
+
     const btn = document.createElement('button');
     btn.textContent = 'Restart';
     btn.style.cssText = 'font-size:24px;padding:12px 32px;cursor:pointer;';
@@ -24,12 +29,14 @@ export class MatchResultOverlay {
     });
 
     this.el.appendChild(this.message);
+    this.el.appendChild(this.rewardEl);
     this.el.appendChild(btn);
     document.body.appendChild(this.el);
   }
 
-  show(winner: 'player' | 'enemy'): void {
+  show(winner: 'player' | 'enemy', reward: number): void {
     this.message.textContent = winner === 'player' ? 'You won!' : 'You lost!';
+    this.rewardEl.textContent = `Earned: $${reward}`;
     this.el.style.display = 'flex';
   }
 

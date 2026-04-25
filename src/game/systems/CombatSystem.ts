@@ -1,6 +1,6 @@
 import type { Troop } from '../entities/Troop';
 import type { Tower } from '../entities/Tower';
-import type { Damageable } from '../types';
+import type { Damageable, MatchState } from '../types';
 import { TOWER } from '../../config/gameConfig';
 
 function overlaps(a: Troop, b: Troop): boolean {
@@ -19,7 +19,7 @@ function atTower(troop: Troop, tower: Tower, direction: 1 | -1): boolean {
 }
 
 export class CombatSystem {
-  update(delta: number, playerTroops: Troop[], enemyTroops: Troop[], playerTower: Tower, enemyTower: Tower): void {
+  update(delta: number, playerTroops: Troop[], enemyTroops: Troop[], playerTower: Tower, enemyTower: Tower, matchState: MatchState): void {
     // Step 1: Engage any overlapping opponent (regardless of their combat state).
     // A WALKING troop always stops when it touches an opponent. If the opponent
     // is already engaged, only the new attacker changes state — the opponent
@@ -80,17 +80,28 @@ export class CombatSystem {
 
     // Step 2: Collect all damage to apply this tick (enables mutual kills)
     const pendingDamage = new Map<Damageable, number>();
+    const playerAttacks = new Set<Damageable>();
     for (const troop of [...playerTroops, ...enemyTroops]) {
       if (troop.state !== 'ATTACKING' || !troop.currentTarget) continue;
       troop.attackTimer += delta;
       if (troop.attackTimer >= troop.attackInterval) {
+        if (playerTroops.includes(troop)) playerAttacks.add(troop.currentTarget);
         const current = pendingDamage.get(troop.currentTarget) ?? 0;
         pendingDamage.set(troop.currentTarget, current + troop.damage);
         troop.attackTimer = 0;
       }
     }
+    const enemyTroopSet = new Set<Damageable>(enemyTroops);
     for (const [target, damage] of pendingDamage) {
+      const wasAlive = target.isAlive();
       target.takeDamage(damage);
+      if (playerAttacks.has(target)) {
+        if (target === enemyTower) {
+          matchState.towerDamageDealt += damage;
+        } else if (wasAlive && !target.isAlive() && enemyTroopSet.has(target)) {
+          matchState.troopsDefeated++;
+        }
+      }
     }
 
     // Step 3: Release survivors whose target just died

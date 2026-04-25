@@ -7,6 +7,7 @@ import { Tower } from '../entities/Tower';
 import { CombatSystem } from '../systems/CombatSystem';
 import { IncomeSystem } from '../systems/IncomeSystem';
 import { WaveSystem } from '../systems/WaveSystem';
+import { computeReward } from '../systems/RewardSystem';
 import { MatchResultOverlay } from '../../ui/MatchResultOverlay';
 import { Hud } from '../../ui/Hud';
 import { load as loadSave, save as persistSave } from '../../state/SaveStore';
@@ -18,7 +19,7 @@ export class MatchScene extends Phaser.Scene {
   enemyTroops: Troop[] = [];
   playerTower!: Tower;
   enemyTower!: Tower;
-  matchState: MatchState = { money: 0 };
+  matchState: MatchState = { money: 0, troopsDefeated: 0, towerDamageDealt: 0 };
   waveSystem!: WaveSystem;
   private gameState!: GameState;
   private enemyStats!: TroopStats;
@@ -81,7 +82,7 @@ export class MatchScene extends Phaser.Scene {
     this.playerTroops.forEach((t) => t.update(delta));
     this.enemyTroops.forEach((t) => t.update(delta));
 
-    this.combatSystem.update(delta, this.playerTroops, this.enemyTroops, this.playerTower, this.enemyTower);
+    this.combatSystem.update(delta, this.playerTroops, this.enemyTroops, this.playerTower, this.enemyTower, this.matchState);
 
     this.playerTroops = this.cleanupTroops(this.playerTroops);
     this.enemyTroops = this.cleanupTroops(this.enemyTroops);
@@ -101,6 +102,8 @@ export class MatchScene extends Phaser.Scene {
     this.playerTower.resetHp();
     this.enemyTower.resetHp();
     this.matchState.money = 0;
+    this.matchState.troopsDefeated = 0;
+    this.matchState.towerDamageDealt = 0;
     this.matchEnded = false;
     this.enemyStats = this.computeEnemyStats();
     this.waveSystem = this.buildWaveSystem();
@@ -121,13 +124,15 @@ export class MatchScene extends Phaser.Scene {
 
   private endMatch(winner: 'player' | 'enemy'): void {
     this.matchEnded = true;
+    const result: MatchResult = { winner };
+    const reward = computeReward(this.matchState, result);
+    this.gameState.money += reward;
     if (winner === 'player') {
       this.gameState.enemyLevel += 1;
-      persistSave(this.gameState);
     }
-    const result: MatchResult = { winner };
+    persistSave(this.gameState);
     this.events.emit('match:end', result);
-    this.overlay.show(winner);
+    this.overlay.show(winner, reward);
   }
 
   private cleanupTroops(troops: Troop[]): Troop[] {
