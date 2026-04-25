@@ -1,13 +1,15 @@
 import Phaser from 'phaser';
 import { FIELD } from '../../render/palette';
 import { BOARD_WIDTH, BOARD_HEIGHT, TOWER_MARGIN, TOWER_WIDTH, TROOP_BASE } from '../../config/gameConfig';
+import { LEVEL_1_WAVES, EMPTY_WAVES } from '../../config/enemyWaves';
 import { Troop } from '../entities/Troop';
 import { Tower } from '../entities/Tower';
 import { CombatSystem } from '../systems/CombatSystem';
 import { IncomeSystem } from '../systems/IncomeSystem';
+import { WaveSystem } from '../systems/WaveSystem';
 import { MatchResultOverlay } from '../../ui/MatchResultOverlay';
 import { Hud } from '../../ui/Hud';
-import type { TroopType, MatchResult, MatchState } from '../types';
+import type { TroopType, MatchResult, MatchState, MatchWaveConfig } from '../types';
 
 export class MatchScene extends Phaser.Scene {
   playerTroops: Troop[] = [];
@@ -15,6 +17,8 @@ export class MatchScene extends Phaser.Scene {
   playerTower!: Tower;
   enemyTower!: Tower;
   matchState: MatchState = { money: 0 };
+  waveSystem!: WaveSystem;
+  private waveConfig: MatchWaveConfig = LEVEL_1_WAVES;
   private combatSystem = new CombatSystem();
   private incomeSystem!: IncomeSystem;
   private overlay!: MatchResultOverlay;
@@ -30,12 +34,18 @@ export class MatchScene extends Phaser.Scene {
     this.enemyTower = new Tower(this, 'enemy');
     this.overlay = new MatchResultOverlay(() => this.resetMatch());
     this.incomeSystem = new IncomeSystem(this.matchState);
-    new Hud(this.matchState, () => {
-      if (this.matchState.money >= TROOP_BASE.cost) {
-        this.matchState.money -= TROOP_BASE.cost;
-        this.spawnTroop('player', 'base');
-      }
-    });
+    this.waveConfig = window.location.search.includes('test') ? EMPTY_WAVES : LEVEL_1_WAVES;
+    this.waveSystem = this.buildWaveSystem();
+    new Hud(
+      this.matchState,
+      () => {
+        if (this.matchState.money >= TROOP_BASE.cost) {
+          this.matchState.money -= TROOP_BASE.cost;
+          this.spawnTroop('player', 'base');
+        }
+      },
+      () => this.waveSystem,
+    );
     this.matchEnded = false;
   }
 
@@ -58,6 +68,7 @@ export class MatchScene extends Phaser.Scene {
     if (this.matchEnded) return;
 
     this.incomeSystem.update(delta);
+    this.waveSystem.update(delta);
     this.playerTroops.forEach((t) => t.update(delta));
     this.enemyTroops.forEach((t) => t.update(delta));
 
@@ -82,6 +93,11 @@ export class MatchScene extends Phaser.Scene {
     this.enemyTower.resetHp();
     this.matchState.money = 0;
     this.matchEnded = false;
+    this.waveSystem = this.buildWaveSystem();
+  }
+
+  private buildWaveSystem(): WaveSystem {
+    return new WaveSystem(this.waveConfig, () => this.spawnTroop('enemy', 'base'));
   }
 
   private endMatch(winner: 'player' | 'enemy'): void {

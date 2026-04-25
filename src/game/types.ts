@@ -23,3 +23,20 @@ export interface Damageable {
 export interface MatchResult {
   winner: 'player' | 'enemy';
 }
+
+export type WaveSystemState = 'BREATHER' | 'SPAWNING' | 'DONE';
+
+export interface WaveTroopGroup {
+  type: TroopType;
+  count: number;
+  spawnIntervalMs: number;
+}
+
+export interface WaveDefinition {
+  troops: WaveTroopGroup[];
+  breatherMs: number;
+}
+
+export interface MatchWaveConfig {
+  waves: WaveDefinition[];
+}
