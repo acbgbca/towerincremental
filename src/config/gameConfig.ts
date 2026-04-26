@@ -28,3 +28,13 @@ export const ENEMY_LEVEL_STAT_STEP = { hp: 25, damage: 5 };
 
 export const REWARD_PER_KILL = 5;
 export const REWARD_PER_TOWER_DAMAGE = 0.2;
+
+export const PRESTIGE_COST = 1000;
+
+export function effectivePlayerStats(prestigeTier: number): TroopStats {
+  return {
+    ...TROOP_BASE,
+    hp: TROOP_BASE.hp + prestigeTier * ENEMY_LEVEL_STAT_STEP.hp,
+    damage: TROOP_BASE.damage + prestigeTier * ENEMY_LEVEL_STAT_STEP.damage,
+  };
+}

@@ -1,5 +1,7 @@
 import { UPGRADES, nextCost, type UpgradeDef } from '../config/upgradeConfig';
+import { PRESTIGE_COST } from '../config/gameConfig';
 import { save as persistSave } from '../state/SaveStore';
+import { showConfirmDialog } from './ConfirmDialog';
 import type { GameState } from '../state/GameState';
 
 export class UpgradeScreen {
@@ -8,10 +10,12 @@ export class UpgradeScreen {
   private rewardEl: HTMLParagraphElement;
   private bankEl: HTMLParagraphElement;
   private rowsEl: HTMLDivElement;
+  private prestigeBtn: HTMLButtonElement;
 
   constructor(
     private gameState: GameState,
     private onContinue: () => void,
+    private onPrestige: () => void,
   ) {
     const existing = document.getElementById('match-result-overlay');
     if (existing) existing.remove();
@@ -45,19 +49,16 @@ export class UpgradeScreen {
       this.onContinue();
     });
 
-    const prestigeBtn = document.createElement('button');
-    prestigeBtn.id = 'upgrade-screen-prestige';
-    prestigeBtn.textContent = 'Purchase Next Level';
-    prestigeBtn.title = 'Coming soon';
-    prestigeBtn.disabled = true;
-    prestigeBtn.style.cssText = 'font-size:16px;padding:8px 20px;opacity:0.5;cursor:not-allowed;';
+    this.prestigeBtn = document.createElement('button');
+    this.prestigeBtn.id = 'upgrade-screen-prestige';
+    this.prestigeBtn.addEventListener('click', () => this.handlePrestige());
 
     this.el.appendChild(this.messageEl);
     this.el.appendChild(this.rewardEl);
     this.el.appendChild(this.bankEl);
     this.el.appendChild(this.rowsEl);
     this.el.appendChild(continueBtn);
-    this.el.appendChild(prestigeBtn);
+    this.el.appendChild(this.prestigeBtn);
     document.body.appendChild(this.el);
   }
 
@@ -82,6 +83,38 @@ export class UpgradeScreen {
     for (const def of UPGRADES) {
       this.rowsEl.appendChild(this.buildRow(def));
     }
+    this.renderPrestigeButton();
+  }
+
+  private renderPrestigeButton(): void {
+    const canAfford = this.gameState.money >= PRESTIGE_COST;
+    this.prestigeBtn.textContent = `Purchase Next Level — $${PRESTIGE_COST}`;
+    this.prestigeBtn.disabled = !canAfford;
+    this.prestigeBtn.style.cssText = `font-size:16px;padding:8px 20px;cursor:${canAfford ? 'pointer' : 'not-allowed'};opacity:${canAfford ? '1' : '0.5'};`;
+  }
+
+  private async handlePrestige(): Promise<void> {
+    if (this.gameState.money < PRESTIGE_COST) return;
+    const confirmed = await showConfirmDialog({
+      id: 'prestige-confirm',
+      message:
+        'This will reset your money, upgrades, and enemy progress. You will gain a permanent troop boost. Continue?',
+      confirmLabel: 'Prestige',
+      cancelLabel: 'Cancel',
+    });
+    if (!confirmed) return;
+    if (this.gameState.money < PRESTIGE_COST) return;
+
+    this.gameState.enemyLevel = 1;
+    this.gameState.money = 0;
+    this.gameState.upgrades = { incomeRate: 0, towerMaxHp: 0 };
+    this.gameState.unlockedTroopTypes = ['base'];
+    this.gameState.prestigeTier += 1;
+    persistSave(this.gameState);
+
+    this.render();
+    this.hide();
+    this.onPrestige();
   }
 
   private buildRow(def: UpgradeDef): HTMLDivElement {

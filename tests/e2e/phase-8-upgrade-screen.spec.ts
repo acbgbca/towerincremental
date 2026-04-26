@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { TOWER, BOARD_WIDTH, TOWER_MARGIN, TOWER_WIDTH, TROOP_BASE } from '../../src/config/gameConfig';
-import { UPGRADES, nextCost, effectiveValue } from '../../src/config/upgradeConfig';
+import { UPGRADES, effectiveValue } from '../../src/config/upgradeConfig';
 
 type SceneShape = {
   sys: { settings: { active: boolean } };
@@ -58,7 +58,7 @@ test('Upgrade screen appears after match end with bank and upgrade rows', async 
   await expect(page.locator('#upgrade-screen-prestige')).toBeDisabled();
 });
 
-test('Purchase Next Level button is disabled with "Coming soon" tooltip', async ({ page }) => {
+test('Purchase Next Level button is disabled when bank is below cost', async ({ page }) => {
   await page.goto('/?test');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
@@ -68,7 +68,6 @@ test('Purchase Next Level button is disabled with "Coming soon" tooltip', async 
 
   const prestige = page.locator('#upgrade-screen-prestige');
   await expect(prestige).toBeDisabled();
-  await expect(prestige).toHaveAttribute('title', 'Coming soon');
 });
 
 test('BUY enables when bank >= cost, clicking deducts bank and increments tier', async ({ page }) => {

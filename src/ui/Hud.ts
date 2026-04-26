@@ -10,6 +10,7 @@ export class Hud {
   private waveTitleEl: HTMLElement;
   private waveSubEl: HTMLElement;
   private enemyLevelEl: HTMLElement;
+  private prestigeEl: HTMLElement;
   private intervalId: ReturnType<typeof setInterval>;
 
   constructor(
@@ -38,6 +39,11 @@ export class Hud {
     this.enemyLevelEl.style.cssText =
       'position:absolute;top:32px;right:8px;color:white;font:14px monospace;text-shadow:0 0 4px #000;';
 
+    this.prestigeEl = document.createElement('div');
+    this.prestigeEl.id = 'hud-prestige';
+    this.prestigeEl.style.cssText =
+      'position:absolute;top:52px;right:8px;color:#ffaaff;font:14px monospace;text-shadow:0 0 4px #000;';
+
     const waveBox = document.createElement('div');
     waveBox.id = 'hud-wave';
     waveBox.style.cssText =
@@ -64,6 +70,7 @@ export class Hud {
     container.appendChild(this.moneyEl);
     container.appendChild(this.bankEl);
     container.appendChild(this.enemyLevelEl);
+    container.appendChild(this.prestigeEl);
     container.appendChild(waveBox);
     container.appendChild(this.spawnBtn);
     document.body.appendChild(container);
@@ -76,6 +83,7 @@ export class Hud {
     this.moneyEl.textContent = `$${Math.floor(this.state.money)}`;
     this.bankEl.textContent = `Bank: $${this.gameState.money}`;
     this.enemyLevelEl.textContent = `Enemy Level: ${this.gameState.enemyLevel}`;
+    this.prestigeEl.textContent = `Prestige: ${this.gameState.prestigeTier}`;
     const canAfford = this.state.money >= TROOP_BASE.cost;
     this.spawnBtn.disabled = !canAfford;
     this.renderWaveStatus();

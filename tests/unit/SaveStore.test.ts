@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { load, save } from '../../src/state/SaveStore';
 import { migrate } from '../../src/state/migrations';
-import { defaultGameState } from '../../src/state/GameState';
+import { defaultGameState, type GameState } from '../../src/state/GameState';
 
 function makeLocalStorageMock() {
   const store: Record<string, string> = {};
@@ -27,7 +27,13 @@ describe('SaveStore', () => {
   });
 
   it('save() then load() round-trips a non-trivial state', () => {
-    const state = { enemyLevel: 7, money: 100, upgrades: { incomeRate: 2, towerMaxHp: 1 } };
+    const state: GameState = {
+      enemyLevel: 7,
+      money: 100,
+      upgrades: { incomeRate: 2, towerMaxHp: 1 },
+      prestigeTier: 3,
+      unlockedTroopTypes: ['base'],
+    };
     save(state);
     const loaded = load();
     expect(loaded).toEqual(state);
@@ -42,19 +48,41 @@ describe('SaveStore', () => {
 
 describe('migrate', () => {
   const defaultUpgrades = { incomeRate: 0, towerMaxHp: 0 };
+  const prestigeDefaults = { prestigeTier: 0, unlockedTroopTypes: ['base'] };
 
-  it('migrate from v1 adds money and upgrades', () => {
+  it('migrate from v1 adds money, upgrades, and prestige fields', () => {
     const data = { enemyLevel: 3 };
-    expect(migrate(1, data)).toEqual({ enemyLevel: 3, money: 0, upgrades: defaultUpgrades });
+    expect(migrate(1, data)).toEqual({
+      enemyLevel: 3,
+      money: 0,
+      upgrades: defaultUpgrades,
+      ...prestigeDefaults,
+    });
   });
 
-  it('migrate from v2 adds upgrades', () => {
+  it('migrate from v2 adds upgrades and prestige fields', () => {
     const data = { enemyLevel: 3, money: 50 };
-    expect(migrate(2, data)).toEqual({ enemyLevel: 3, money: 50, upgrades: defaultUpgrades });
+    expect(migrate(2, data)).toEqual({
+      enemyLevel: 3,
+      money: 50,
+      upgrades: defaultUpgrades,
+      ...prestigeDefaults,
+    });
   });
 
-  it('migrate from v3 (CURRENT_VERSION) is identity', () => {
+  it('migrate from v3 adds prestige fields', () => {
     const data = { enemyLevel: 3, money: 50, upgrades: { incomeRate: 1, towerMaxHp: 2 } };
-    expect(migrate(3, data)).toEqual(data);
+    expect(migrate(3, data)).toEqual({ ...data, ...prestigeDefaults });
+  });
+
+  it('migrate from v4 (CURRENT_VERSION) is identity', () => {
+    const data = {
+      enemyLevel: 3,
+      money: 50,
+      upgrades: { incomeRate: 1, towerMaxHp: 2 },
+      prestigeTier: 2,
+      unlockedTroopTypes: ['base'],
+    };
+    expect(migrate(4, data)).toEqual(data);
   });
 });
