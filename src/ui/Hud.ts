@@ -1,12 +1,18 @@
-import type { MatchState } from '../game/types';
+import type { MatchState, TroopType } from '../game/types';
 import type { WaveSystem } from '../game/systems/WaveSystem';
 import type { GameState } from '../state/GameState';
-import { TROOP_BASE } from '../config/gameConfig';
+import { TROOP_TYPES, TROOP_LABELS } from '../config/troopTypes';
+
+interface SpawnButtonEntry {
+  type: TroopType;
+  el: HTMLButtonElement;
+}
 
 export class Hud {
   private moneyEl: HTMLElement;
   private bankEl: HTMLElement;
-  private spawnBtn: HTMLButtonElement;
+  private spawnContainer: HTMLDivElement;
+  private spawnButtons: SpawnButtonEntry[] = [];
   private waveTitleEl: HTMLElement;
   private waveSubEl: HTMLElement;
   private enemyLevelEl: HTMLElement;
@@ -16,7 +22,7 @@ export class Hud {
   constructor(
     private state: MatchState,
     private gameState: GameState,
-    onSpawn: () => void,
+    private onSpawn: (type: TroopType) => void,
     private getWaveSystem: () => WaveSystem,
   ) {
     const container = document.createElement('div');
@@ -60,32 +66,50 @@ export class Hud {
     waveBox.appendChild(this.waveTitleEl);
     waveBox.appendChild(this.waveSubEl);
 
-    this.spawnBtn = document.createElement('button');
-    this.spawnBtn.id = 'hud-spawn-base';
-    this.spawnBtn.textContent = `Base Troop $${TROOP_BASE.cost}`;
-    this.spawnBtn.style.cssText =
-      'position:absolute;bottom:16px;left:50%;transform:translateX(-50%);pointer-events:auto;padding:8px 16px;font-size:16px;';
-    this.spawnBtn.addEventListener('click', onSpawn);
+    this.spawnContainer = document.createElement('div');
+    this.spawnContainer.id = 'hud-spawn-container';
+    this.spawnContainer.style.cssText =
+      'position:absolute;bottom:16px;left:50%;transform:translateX(-50%);' +
+      'display:flex;gap:12px;pointer-events:auto;';
 
     container.appendChild(this.moneyEl);
     container.appendChild(this.bankEl);
     container.appendChild(this.enemyLevelEl);
     container.appendChild(this.prestigeEl);
     container.appendChild(waveBox);
-    container.appendChild(this.spawnBtn);
+    container.appendChild(this.spawnContainer);
     document.body.appendChild(container);
 
+    this.refreshSpawnButtons();
     this.tick();
     this.intervalId = setInterval(() => this.tick(), 100);
   }
 
+  refreshSpawnButtons(): void {
+    this.spawnContainer.innerHTML = '';
+    this.spawnButtons = [];
+    for (const type of this.gameState.unlockedTroopTypes) {
+      const btn = document.createElement('button');
+      btn.id = `hud-spawn-${type}`;
+      btn.textContent = `${TROOP_LABELS[type]} $${TROOP_TYPES[type].cost}`;
+      btn.style.cssText = 'padding:8px 16px;font-size:16px;cursor:pointer;';
+      btn.addEventListener('click', () => this.onSpawn(type));
+      this.spawnContainer.appendChild(btn);
+      this.spawnButtons.push({ type, el: btn });
+    }
+  }
+
   private tick(): void {
+    if (this.spawnButtons.length !== this.gameState.unlockedTroopTypes.length) {
+      this.refreshSpawnButtons();
+    }
     this.moneyEl.textContent = `$${Math.floor(this.state.money)}`;
     this.bankEl.textContent = `Bank: $${this.gameState.money}`;
     this.enemyLevelEl.textContent = `Enemy Level: ${this.gameState.enemyLevel}`;
     this.prestigeEl.textContent = `Prestige: ${this.gameState.prestigeTier}`;
-    const canAfford = this.state.money >= TROOP_BASE.cost;
-    this.spawnBtn.disabled = !canAfford;
+    for (const { type, el } of this.spawnButtons) {
+      el.disabled = this.state.money < TROOP_TYPES[type].cost;
+    }
     this.renderWaveStatus();
   }
 

@@ -1,7 +1,17 @@
 import Phaser from 'phaser';
 import { FIELD } from '../../render/palette';
-import { BOARD_WIDTH, BOARD_HEIGHT, TOWER_MARGIN, TOWER_WIDTH, TROOP_BASE, ENEMY_LEVEL_STAT_STEP, INCOME_RATE, TOWER, effectivePlayerStats } from '../../config/gameConfig';
-import { LEVEL_1_WAVES, EMPTY_WAVES } from '../../config/enemyWaves';
+import {
+  BOARD_WIDTH,
+  BOARD_HEIGHT,
+  TOWER_MARGIN,
+  TOWER_WIDTH,
+  INCOME_RATE,
+  TOWER,
+  effectivePlayerStats,
+  effectiveEnemyStats,
+} from '../../config/gameConfig';
+import { TROOP_TYPES } from '../../config/troopTypes';
+import { wavesForLevel, EMPTY_WAVES } from '../../config/enemyWaves';
 import { Troop } from '../entities/Troop';
 import { Tower } from '../entities/Tower';
 import { CombatSystem } from '../systems/CombatSystem';
@@ -13,7 +23,7 @@ import { Hud } from '../../ui/Hud';
 import { UPGRADES, effectiveValue } from '../../config/upgradeConfig';
 import { load as loadSave, save as persistSave } from '../../state/SaveStore';
 import type { GameState } from '../../state/GameState';
-import type { TroopType, TroopStats, MatchResult, MatchState, MatchWaveConfig } from '../types';
+import type { TroopType, MatchResult, MatchState, MatchWaveConfig } from '../types';
 
 export class MatchScene extends Phaser.Scene {
   playerTroops: Troop[] = [];
@@ -22,13 +32,12 @@ export class MatchScene extends Phaser.Scene {
   enemyTower!: Tower;
   matchState: MatchState = { money: 0, troopsDefeated: 0, towerDamageDealt: 0 };
   waveSystem!: WaveSystem;
-  private gameState!: GameState;
-  private enemyStats!: TroopStats;
-  private playerStats!: TroopStats;
-  private waveConfig: MatchWaveConfig = LEVEL_1_WAVES;
+  gameState!: GameState;
+  private waveConfig: MatchWaveConfig = EMPTY_WAVES;
   private combatSystem = new CombatSystem();
   incomeSystem!: IncomeSystem;
   private overlay!: UpgradeScreen;
+  private hud!: Hud;
   private matchEnded = false;
 
   constructor() {
@@ -37,8 +46,6 @@ export class MatchScene extends Phaser.Scene {
 
   create(): void {
     this.gameState = loadSave();
-    this.enemyStats = this.computeEnemyStats();
-    this.playerStats = effectivePlayerStats(this.gameState.prestigeTier);
 
     this.add.rectangle(BOARD_WIDTH / 2, BOARD_HEIGHT / 2, BOARD_WIDTH, BOARD_HEIGHT, FIELD);
     const playerMaxHp = effectiveValue(UPGRADES[1], TOWER.maxHp, this.gameState.upgrades.towerMaxHp);
@@ -51,17 +58,14 @@ export class MatchScene extends Phaser.Scene {
       () => this.resetMatch(),
     );
     this.incomeSystem = new IncomeSystem(this.matchState, incomeRate);
-    this.waveConfig = window.location.search.includes('test') ? EMPTY_WAVES : LEVEL_1_WAVES;
+    this.waveConfig = window.location.search.includes('test')
+      ? EMPTY_WAVES
+      : wavesForLevel(this.gameState.enemyLevel);
     this.waveSystem = this.buildWaveSystem();
-    new Hud(
+    this.hud = new Hud(
       this.matchState,
       this.gameState,
-      () => {
-        if (this.matchState.money >= TROOP_BASE.cost) {
-          this.matchState.money -= TROOP_BASE.cost;
-          this.spawnTroop('player', 'base');
-        }
-      },
+      (type) => this.handleHudSpawn(type),
       () => this.waveSystem,
     );
     this.matchEnded = false;
@@ -74,7 +78,10 @@ export class MatchScene extends Phaser.Scene {
         ? TOWER_MARGIN + TOWER_WIDTH
         : BOARD_WIDTH - TOWER_MARGIN - TOWER_WIDTH;
     const y = BOARD_HEIGHT / 2;
-    const stats = side === 'enemy' ? this.enemyStats : this.playerStats;
+    const stats =
+      side === 'enemy'
+        ? effectiveEnemyStats(type, this.gameState.enemyLevel)
+        : effectivePlayerStats(type, this.gameState.prestigeTier);
     const troop = new Troop(this, side, type, x, y, stats);
     if (side === 'player') {
       this.playerTroops.push(troop);
@@ -117,22 +124,22 @@ export class MatchScene extends Phaser.Scene {
     this.matchState.towerDamageDealt = 0;
     this.matchEnded = false;
     this.incomeSystem = new IncomeSystem(this.matchState, incomeRate);
-    this.enemyStats = this.computeEnemyStats();
-    this.playerStats = effectivePlayerStats(this.gameState.prestigeTier);
+    this.waveConfig = window.location.search.includes('test')
+      ? EMPTY_WAVES
+      : wavesForLevel(this.gameState.enemyLevel);
     this.waveSystem = this.buildWaveSystem();
+    this.hud?.refreshSpawnButtons();
   }
 
-  private computeEnemyStats(): TroopStats {
-    const level = this.gameState.enemyLevel;
-    return {
-      ...TROOP_BASE,
-      hp: TROOP_BASE.hp + (level - 1) * ENEMY_LEVEL_STAT_STEP.hp,
-      damage: TROOP_BASE.damage + (level - 1) * ENEMY_LEVEL_STAT_STEP.damage,
-    };
+  private handleHudSpawn(type: TroopType): void {
+    const cost = TROOP_TYPES[type].cost;
+    if (this.matchState.money < cost) return;
+    this.matchState.money -= cost;
+    this.spawnTroop('player', type);
   }
 
   private buildWaveSystem(): WaveSystem {
-    return new WaveSystem(this.waveConfig, () => this.spawnTroop('enemy', 'base'));
+    return new WaveSystem(this.waveConfig, (type) => this.spawnTroop('enemy', type));
   }
 
   private endMatch(winner: 'player' | 'enemy'): void {

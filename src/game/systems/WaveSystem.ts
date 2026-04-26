@@ -1,13 +1,15 @@
-import type { MatchWaveConfig, WaveSystemState } from '../types';
+import type { MatchWaveConfig, TroopType, WaveSystemState } from '../types';
 
-export type WaveSpawnCallback = () => void;
+export type WaveSpawnCallback = (type: TroopType) => void;
 
 export class WaveSystem {
   state: WaveSystemState = 'BREATHER';
   currentWaveIndex = 0;
   nextSpawnInMs = 0;
   nextWaveInMs = 0;
-  troopsRemainingInWave = 0;
+
+  private currentGroupIndex = 0;
+  private troopsRemainingInGroup = 0;
 
   constructor(
     private readonly config: MatchWaveConfig,
@@ -17,11 +19,21 @@ export class WaveSystem {
       this.state = 'DONE';
       return;
     }
-    this.troopsRemainingInWave = config.waves[0].troops[0]?.count ?? 0;
+    this.troopsRemainingInGroup = config.waves[0].troops[0]?.count ?? 0;
   }
 
   get totalWaves(): number {
     return this.config.waves.length;
+  }
+
+  get troopsRemainingInWave(): number {
+    const wave = this.config.waves[this.currentWaveIndex];
+    if (!wave) return 0;
+    let total = this.troopsRemainingInGroup;
+    for (let i = this.currentGroupIndex + 1; i < wave.troops.length; i++) {
+      total += wave.troops[i].count;
+    }
+    return total;
   }
 
   update(delta: number): void {
@@ -41,18 +53,25 @@ export class WaveSystem {
     if (this.state === 'SPAWNING') {
       this.nextSpawnInMs -= delta;
       const wave = this.config.waves[this.currentWaveIndex];
-      const interval = wave.troops[0].spawnIntervalMs;
-      while (this.nextSpawnInMs <= 0 && this.troopsRemainingInWave > 0) {
-        this.onSpawn();
-        this.troopsRemainingInWave -= 1;
-        this.nextSpawnInMs += interval;
+      let group = wave.troops[this.currentGroupIndex];
+      while (this.nextSpawnInMs <= 0 && this.troopsRemainingInGroup > 0) {
+        this.onSpawn(group.type);
+        this.troopsRemainingInGroup -= 1;
+        this.nextSpawnInMs += group.spawnIntervalMs;
+        if (this.troopsRemainingInGroup === 0 && this.currentGroupIndex + 1 < wave.troops.length) {
+          this.currentGroupIndex += 1;
+          group = wave.troops[this.currentGroupIndex];
+          this.troopsRemainingInGroup = group.count;
+          this.nextSpawnInMs = 0;
+        }
       }
-      if (this.troopsRemainingInWave === 0) {
+      if (this.troopsRemainingInGroup === 0) {
         this.state = 'BREATHER';
         this.nextWaveInMs = wave.breatherMs;
         this.currentWaveIndex += 1;
+        this.currentGroupIndex = 0;
         const nextWave = this.config.waves[this.currentWaveIndex];
-        this.troopsRemainingInWave = nextWave?.troops[0]?.count ?? 0;
+        this.troopsRemainingInGroup = nextWave?.troops[0]?.count ?? 0;
       }
     }
   }

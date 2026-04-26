@@ -1,8 +1,10 @@
 import { UPGRADES, nextCost, type UpgradeDef } from '../config/upgradeConfig';
 import { PRESTIGE_COST } from '../config/gameConfig';
+import { TROOP_LABELS, UNLOCK_COSTS } from '../config/troopTypes';
 import { save as persistSave } from '../state/SaveStore';
 import { showConfirmDialog } from './ConfirmDialog';
 import type { GameState } from '../state/GameState';
+import type { TroopType } from '../game/types';
 
 export class UpgradeScreen {
   private el: HTMLDivElement;
@@ -81,7 +83,11 @@ export class UpgradeScreen {
     this.bankEl.textContent = `Bank: $${Math.floor(this.gameState.money)}`;
     this.rowsEl.innerHTML = '';
     for (const def of UPGRADES) {
-      this.rowsEl.appendChild(this.buildRow(def));
+      this.rowsEl.appendChild(this.buildUpgradeRow(def));
+    }
+    for (const [type, cost] of Object.entries(UNLOCK_COSTS) as [TroopType, number][]) {
+      if (this.gameState.unlockedTroopTypes.includes(type)) continue;
+      this.rowsEl.appendChild(this.buildUnlockRow(type, cost));
     }
     this.renderPrestigeButton();
   }
@@ -117,35 +123,28 @@ export class UpgradeScreen {
     this.onPrestige();
   }
 
-  private buildRow(def: UpgradeDef): HTMLDivElement {
+  private buildUpgradeRow(def: UpgradeDef): HTMLDivElement {
     const tier = this.gameState.upgrades[def.id];
     const cost = nextCost(def, tier);
     const canAfford = this.gameState.money >= cost;
 
-    const row = document.createElement('div');
-    row.style.cssText =
-      'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.1);' +
-      'padding:10px 16px;border-radius:8px;';
+    const row = this.makeRow();
 
-    const label = document.createElement('span');
-    label.style.cssText = 'color:#fff;font-size:18px;flex:1;';
-    label.textContent = def.label;
+    const label = this.makeLabel(def.label);
 
     const tierEl = document.createElement('span');
     tierEl.id = `upgrade-tier-${def.id}`;
     tierEl.style.cssText = 'color:#aef;font-size:16px;min-width:60px;text-align:center;';
     tierEl.textContent = `Tier ${tier}`;
 
-    const costEl = document.createElement('span');
-    costEl.style.cssText = 'color:#ffd700;font-size:16px;min-width:80px;text-align:right;';
-    costEl.textContent = `$${cost}`;
+    const costEl = this.makeCost(cost);
 
     const btn = document.createElement('button');
     btn.dataset.upgradeId = def.id;
     btn.textContent = 'BUY';
     btn.disabled = !canAfford;
     btn.style.cssText = `font-size:16px;padding:6px 16px;cursor:${canAfford ? 'pointer' : 'not-allowed'};opacity:${canAfford ? '1' : '0.5'};`;
-    btn.addEventListener('click', () => this.purchase(def));
+    btn.addEventListener('click', () => this.purchaseUpgrade(def));
 
     row.appendChild(label);
     row.appendChild(tierEl);
@@ -154,12 +153,64 @@ export class UpgradeScreen {
     return row;
   }
 
-  private purchase(def: UpgradeDef): void {
+  private buildUnlockRow(type: TroopType, cost: number): HTMLDivElement {
+    const canAfford = this.gameState.money >= cost;
+    const row = this.makeRow();
+    row.id = `unlock-${type}`;
+
+    const label = this.makeLabel(`Unlock ${TROOP_LABELS[type]}`);
+    const costEl = this.makeCost(cost);
+
+    const btn = document.createElement('button');
+    btn.id = `unlock-${type}-buy`;
+    btn.textContent = 'BUY';
+    btn.disabled = !canAfford;
+    btn.style.cssText = `font-size:16px;padding:6px 16px;cursor:${canAfford ? 'pointer' : 'not-allowed'};opacity:${canAfford ? '1' : '0.5'};`;
+    btn.addEventListener('click', () => this.purchaseUnlock(type, cost));
+
+    row.appendChild(label);
+    row.appendChild(costEl);
+    row.appendChild(btn);
+    return row;
+  }
+
+  private makeRow(): HTMLDivElement {
+    const row = document.createElement('div');
+    row.style.cssText =
+      'display:flex;align-items:center;gap:16px;background:rgba(255,255,255,0.1);' +
+      'padding:10px 16px;border-radius:8px;';
+    return row;
+  }
+
+  private makeLabel(text: string): HTMLSpanElement {
+    const label = document.createElement('span');
+    label.style.cssText = 'color:#fff;font-size:18px;flex:1;';
+    label.textContent = text;
+    return label;
+  }
+
+  private makeCost(cost: number): HTMLSpanElement {
+    const costEl = document.createElement('span');
+    costEl.style.cssText = 'color:#ffd700;font-size:16px;min-width:80px;text-align:right;';
+    costEl.textContent = `$${cost}`;
+    return costEl;
+  }
+
+  private purchaseUpgrade(def: UpgradeDef): void {
     const tier = this.gameState.upgrades[def.id];
     const cost = nextCost(def, tier);
     if (this.gameState.money < cost) return;
     this.gameState.money -= cost;
     this.gameState.upgrades[def.id] += 1;
+    persistSave(this.gameState);
+    this.render();
+  }
+
+  private purchaseUnlock(type: TroopType, cost: number): void {
+    if (this.gameState.money < cost) return;
+    if (this.gameState.unlockedTroopTypes.includes(type)) return;
+    this.gameState.money -= cost;
+    this.gameState.unlockedTroopTypes = [...this.gameState.unlockedTroopTypes, type];
     persistSave(this.gameState);
     this.render();
   }

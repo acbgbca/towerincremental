@@ -1,4 +1,4 @@
-export type TroopType = 'base';
+export type TroopType = 'base' | 'runner' | 'tank';
 export type TroopState = 'WALKING' | 'ATTACKING' | 'DEAD';
 
 export interface TroopStats {

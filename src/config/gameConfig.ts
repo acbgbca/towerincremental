@@ -1,4 +1,5 @@
-import type { TroopStats } from '../game/types';
+import type { TroopStats, TroopType } from '../game/types';
+import { TROOP_TYPES, UNLOCK_COSTS } from './troopTypes';
 
 export const BOARD_WIDTH = 1280;
 export const BOARD_HEIGHT = 720;
@@ -9,15 +10,7 @@ export const TOWER_MARGIN = 20;
 
 export const INCOME_RATE = 10; // money per second
 
-export const TROOP_BASE: TroopStats = {
-  walkSpeed: 80,
-  width: 24,
-  height: 36,
-  hp: 100,
-  damage: 20,
-  attackInterval: 500,
-  cost: 25,
-};
+export const TROOP_BASE: TroopStats = TROOP_TYPES.base;
 
 export const TOWER = {
   maxHp: 500,
@@ -31,10 +24,23 @@ export const REWARD_PER_TOWER_DAMAGE = 0.2;
 
 export const PRESTIGE_COST = 1000;
 
-export function effectivePlayerStats(prestigeTier: number): TroopStats {
+export const UNLOCK_COST_RUNNER = UNLOCK_COSTS.runner!;
+export const UNLOCK_COST_TANK = UNLOCK_COSTS.tank!;
+
+export function effectivePlayerStats(type: TroopType, prestigeTier: number): TroopStats {
+  const base = TROOP_TYPES[type];
   return {
-    ...TROOP_BASE,
-    hp: TROOP_BASE.hp + prestigeTier * ENEMY_LEVEL_STAT_STEP.hp,
-    damage: TROOP_BASE.damage + prestigeTier * ENEMY_LEVEL_STAT_STEP.damage,
+    ...base,
+    hp: base.hp + prestigeTier * ENEMY_LEVEL_STAT_STEP.hp,
+    damage: base.damage + prestigeTier * ENEMY_LEVEL_STAT_STEP.damage,
+  };
+}
+
+export function effectiveEnemyStats(type: TroopType, enemyLevel: number): TroopStats {
+  const base = TROOP_TYPES[type];
+  return {
+    ...base,
+    hp: base.hp + (enemyLevel - 1) * ENEMY_LEVEL_STAT_STEP.hp,
+    damage: base.damage + (enemyLevel - 1) * ENEMY_LEVEL_STAT_STEP.damage,
   };
 }
