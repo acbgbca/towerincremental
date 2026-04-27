@@ -10,6 +10,8 @@ export interface TroopStats {
   attackInterval: number;
   cost: number;
   range: number;
+  projectileSpeed: number;
+  projectileRadius: number;
 }
 
 export interface MatchState {

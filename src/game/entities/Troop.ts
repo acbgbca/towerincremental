@@ -18,11 +18,13 @@ export class Troop implements Damageable {
   attackTimer: number = 0;
 
   readonly type: TroopType;
+  readonly side: Side;
 
   constructor(scene: Phaser.Scene, side: Side, type: TroopType, x: number, y: number, stats: TroopStats = TROOP_BASE) {
     this.scene = scene;
     this.stats = stats;
     this.type = type;
+    this.side = side;
     this.direction = side === 'player' ? 1 : -1;
     const hpBarYOffset = stats.height / 2 + 6;
     this.rect = drawTroop(scene, side, type, x, y);

@@ -14,6 +14,7 @@ import { TROOP_TYPES } from '../../config/troopTypes';
 import { wavesForLevel, EMPTY_WAVES } from '../../config/enemyWaves';
 import { Troop } from '../entities/Troop';
 import { Tower } from '../entities/Tower';
+import { Projectile, type ProjectileTarget, type ProjectileImpact } from '../entities/Projectile';
 import { CombatSystem } from '../systems/CombatSystem';
 import { IncomeSystem } from '../systems/IncomeSystem';
 import { WaveSystem } from '../systems/WaveSystem';
@@ -28,13 +29,14 @@ import type { TroopType, MatchResult, MatchState, MatchWaveConfig } from '../typ
 export class MatchScene extends Phaser.Scene {
   playerTroops: Troop[] = [];
   enemyTroops: Troop[] = [];
+  projectiles: Projectile[] = [];
   playerTower!: Tower;
   enemyTower!: Tower;
   matchState: MatchState = { money: 0, troopDamageDealt: 0, towerDamageDealt: 0 };
   waveSystem!: WaveSystem;
   gameState!: GameState;
   private waveConfig: MatchWaveConfig = EMPTY_WAVES;
-  private combatSystem = new CombatSystem();
+  private combatSystem = new CombatSystem((attacker, target) => this.spawnProjectile(attacker, target));
   incomeSystem!: IncomeSystem;
   private overlay!: UpgradeScreen;
   private hud!: Hud;
@@ -68,7 +70,22 @@ export class MatchScene extends Phaser.Scene {
       (type) => this.handleHudSpawn(type),
       () => this.waveSystem,
     );
+    this.events.on('projectile:impact', (impact: ProjectileImpact) => this.onProjectileImpact(impact));
     this.matchEnded = false;
+  }
+
+  spawnProjectile(attacker: Troop, target: ProjectileTarget): void {
+    const stats = TROOP_TYPES[attacker.type];
+    this.projectiles.push(new Projectile(this, attacker, target, attacker.type, stats.projectileSpeed));
+  }
+
+  private onProjectileImpact(impact: ProjectileImpact): void {
+    if (impact.attackerSide !== 'player') return;
+    if (impact.target === this.enemyTower) {
+      this.matchState.towerDamageDealt += impact.damage;
+    } else if (this.enemyTroops.includes(impact.target as Troop)) {
+      this.matchState.troopDamageDealt += impact.damage;
+    }
   }
 
   spawnTroop(side: 'player' | 'enemy', type: TroopType): void {
@@ -98,7 +115,10 @@ export class MatchScene extends Phaser.Scene {
     this.playerTroops.forEach((t) => t.update(delta));
     this.enemyTroops.forEach((t) => t.update(delta));
 
-    this.combatSystem.update(delta, this.playerTroops, this.enemyTroops, this.playerTower, this.enemyTower, this.matchState);
+    this.combatSystem.update(delta, this.playerTroops, this.enemyTroops, this.playerTower, this.enemyTower);
+
+    this.projectiles.forEach((p) => p.update(delta));
+    this.projectiles = this.cleanupProjectiles(this.projectiles);
 
     this.playerTroops = this.cleanupTroops(this.playerTroops);
     this.enemyTroops = this.cleanupTroops(this.enemyTroops);
@@ -113,8 +133,10 @@ export class MatchScene extends Phaser.Scene {
   resetMatch(): void {
     this.playerTroops.forEach((t) => t.destroy());
     this.enemyTroops.forEach((t) => t.destroy());
+    this.projectiles.forEach((p) => p.destroy());
     this.playerTroops = [];
     this.enemyTroops = [];
+    this.projectiles = [];
     const playerMaxHp = effectiveValue(UPGRADES[1], TOWER.maxHp, this.gameState.upgrades.towerMaxHp);
     const incomeRate  = effectiveValue(UPGRADES[0], INCOME_RATE, this.gameState.upgrades.incomeRate);
     this.playerTower.resetHp(playerMaxHp);
@@ -159,6 +181,16 @@ export class MatchScene extends Phaser.Scene {
     return troops.filter((t) => {
       if (t.state === 'DEAD' || t.isOutOfBounds()) {
         t.destroy();
+        return false;
+      }
+      return true;
+    });
+  }
+
+  private cleanupProjectiles(projectiles: Projectile[]): Projectile[] {
+    return projectiles.filter((p) => {
+      if (p.expired) {
+        p.destroy();
         return false;
       }
       return true;

@@ -100,9 +100,15 @@ test('Two players both engage the same enemy — enemy dies faster, both players
     { timeout: 15_000 },
   );
 
-  // Enemy dies faster (2 attackers): 100hp / 40dmg_per_tick ≈ 3 ticks × 500ms = 1500ms
+  // Enemy dies faster (2 attackers): 100hp / 40dmg_per_tick ≈ 3 ticks × 500ms = 1500ms.
+  // After projectiles, the WALKING reset happens one tick after the kill, so wait for both.
   await page.waitForFunction(
-    () => (window as GameWindow).__game__?.scene.getScene('Match')?.enemyTroops.length === 0,
+    () => {
+      const scene = (window as GameWindow).__game__?.scene.getScene('Match');
+      if (!scene) return false;
+      if (scene.enemyTroops.length !== 0) return false;
+      return scene.playerTroops.every((t) => t.state === 'WALKING');
+    },
     { timeout: 10_000 },
   );
 
