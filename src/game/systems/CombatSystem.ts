@@ -1,84 +1,69 @@
 import type { Troop } from '../entities/Troop';
 import type { Tower } from '../entities/Tower';
 import type { Damageable, MatchState } from '../types';
-import { TOWER } from '../../config/gameConfig';
 
-function overlaps(a: Troop, b: Troop): boolean {
-  return (
-    Math.abs(a.x - b.x) < (a.width + b.width) / 2 &&
-    Math.abs(a.y - b.y) < (a.height + b.height) / 2
-  );
+interface RangeTarget extends Damageable {
+  x: number;
+  width: number;
 }
 
-function atTower(troop: Troop, tower: Tower, direction: 1 | -1): boolean {
-  if (direction === 1) {
-    return troop.x + troop.width / 2 + TOWER.attackTargetingMargin >= tower.x - tower.width / 2;
-  } else {
-    return troop.x - troop.width / 2 - TOWER.attackTargetingMargin <= tower.x + tower.width / 2;
+function distanceToNearEdge(self: Troop, target: RangeTarget): number {
+  return Math.abs(self.x - target.x) - target.width / 2;
+}
+
+function pickTarget(
+  self: Troop,
+  troops: Troop[],
+  tower: Tower,
+): Damageable | null {
+  let best: Damageable | null = null;
+  let bestDist = Infinity;
+  for (const candidate of troops) {
+    if (!candidate.isAlive()) continue;
+    const d = distanceToNearEdge(self, candidate);
+    if (d <= self.range && d < bestDist) {
+      best = candidate;
+      bestDist = d;
+    }
   }
+  if (tower.isAlive()) {
+    const d = distanceToNearEdge(self, tower);
+    if (d <= self.range && d < bestDist) {
+      best = tower;
+      bestDist = d;
+    }
+  }
+  return best;
 }
 
 export class CombatSystem {
-  update(delta: number, playerTroops: Troop[], enemyTroops: Troop[], playerTower: Tower, enemyTower: Tower, matchState: MatchState): void {
-    // Step 1: Engage any overlapping opponent (regardless of their combat state).
-    // A WALKING troop always stops when it touches an opponent. If the opponent
-    // is already engaged, only the new attacker changes state — the opponent
-    // keeps its existing target. A symmetric enemy pass ensures a re-WALKING
-    // enemy re-engages instead of walking away after its original target dies.
+  update(
+    delta: number,
+    playerTroops: Troop[],
+    enemyTroops: Troop[],
+    playerTower: Tower,
+    enemyTower: Tower,
+    matchState: MatchState,
+  ): void {
     for (const player of playerTroops) {
       if (player.state !== 'WALKING') continue;
-      for (const enemy of enemyTroops) {
-        if (enemy.state === 'DEAD') continue;
-        if (overlaps(player, enemy)) {
-          player.state = 'ATTACKING';
-          player.currentTarget = enemy;
-          if (enemy.state === 'WALKING') {
-            enemy.state = 'ATTACKING';
-            enemy.currentTarget = player;
-          }
-          break;
-        }
+      const target = pickTarget(player, enemyTroops, enemyTower);
+      if (target) {
+        player.state = 'ATTACKING';
+        player.currentTarget = target;
       }
     }
 
     for (const enemy of enemyTroops) {
       if (enemy.state !== 'WALKING') continue;
-      for (const player of playerTroops) {
-        if (player.state === 'DEAD') continue;
-        if (overlaps(enemy, player)) {
-          enemy.state = 'ATTACKING';
-          enemy.currentTarget = player;
-          if (player.state === 'WALKING') {
-            player.state = 'ATTACKING';
-            player.currentTarget = enemy;
-          }
-          break;
-        }
+      const target = pickTarget(enemy, playerTroops, playerTower);
+      if (target) {
+        enemy.state = 'ATTACKING';
+        enemy.currentTarget = target;
       }
     }
 
-    // Step 1b: Tower targeting — walking troops that reach the opposing tower
-    if (enemyTower.isAlive()) {
-      for (const player of playerTroops) {
-        if (player.state !== 'WALKING') continue;
-        if (atTower(player, enemyTower, 1)) {
-          player.state = 'ATTACKING';
-          player.currentTarget = enemyTower;
-        }
-      }
-    }
-
-    if (playerTower.isAlive()) {
-      for (const enemy of enemyTroops) {
-        if (enemy.state !== 'WALKING') continue;
-        if (atTower(enemy, playerTower, -1)) {
-          enemy.state = 'ATTACKING';
-          enemy.currentTarget = playerTower;
-        }
-      }
-    }
-
-    // Step 2: Collect all damage to apply this tick (enables mutual kills)
+    // Two-pass damage so mutual kills resolve in the same tick.
     const pendingDamage = new Map<Damageable, number>();
     const playerAttacks = new Set<Damageable>();
     for (const troop of [...playerTroops, ...enemyTroops]) {
@@ -103,7 +88,6 @@ export class CombatSystem {
       }
     }
 
-    // Step 3: Release survivors whose target just died
     for (const troop of [...playerTroops, ...enemyTroops]) {
       if (troop.state === 'ATTACKING' && troop.currentTarget && !troop.currentTarget.isAlive()) {
         troop.state = 'WALKING';

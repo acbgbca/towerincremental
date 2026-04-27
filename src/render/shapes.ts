@@ -62,7 +62,7 @@ export function drawTowerHpBar(scene: Phaser.Scene, side: Side): HpBar {
 }
 
 function shadeForType(baseColor: number, type: TroopType): number {
-  if (type === 'runner') return blend(baseColor, 0xffffff, 0.25);
+  if (type === 'archer') return blend(baseColor, 0xffffff, 0.25);
   if (type === 'tank') return blend(baseColor, 0x000000, 0.3);
   return baseColor;
 }
