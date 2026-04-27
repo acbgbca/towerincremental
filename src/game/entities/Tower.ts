@@ -23,6 +23,10 @@ export class Tower implements Damageable {
     return this.rect.x;
   }
 
+  get y(): number {
+    return this.rect.y;
+  }
+
   get width(): number {
     return TOWER_WIDTH;
   }

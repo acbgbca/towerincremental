@@ -29,6 +29,19 @@ export function drawTroop(
   return scene.add.rectangle(x, y, stats.width, stats.height, color);
 }
 
+export function drawProjectile(
+  scene: Phaser.Scene,
+  side: Side,
+  type: TroopType,
+  x: number,
+  y: number,
+): Phaser.GameObjects.Arc {
+  const baseColor = side === 'player' ? TROOP_PLAYER : TROOP_ENEMY;
+  const color = shadeForType(baseColor, type);
+  const radius = TROOP_TYPES[type].projectileRadius;
+  return scene.add.circle(x, y, radius, color);
+}
+
 export interface HpBar {
   bg: Phaser.GameObjects.Rectangle;
   fill: Phaser.GameObjects.Rectangle;

@@ -1,6 +1,7 @@
 import type { Troop } from '../entities/Troop';
 import type { Tower } from '../entities/Tower';
-import type { Damageable, MatchState } from '../types';
+import type { ProjectileTarget } from '../entities/Projectile';
+import type { Damageable } from '../types';
 
 interface RangeTarget extends Damageable {
   x: number;
@@ -15,8 +16,8 @@ function pickTarget(
   self: Troop,
   troops: Troop[],
   tower: Tower,
-): Damageable | null {
-  let best: Damageable | null = null;
+): ProjectileTarget | null {
+  let best: ProjectileTarget | null = null;
   let bestDist = Infinity;
   for (const candidate of troops) {
     if (!candidate.isAlive()) continue;
@@ -37,13 +38,14 @@ function pickTarget(
 }
 
 export class CombatSystem {
+  constructor(private spawnProjectile: (attacker: Troop, target: ProjectileTarget) => void) {}
+
   update(
     delta: number,
     playerTroops: Troop[],
     enemyTroops: Troop[],
     playerTower: Tower,
     enemyTower: Tower,
-    matchState: MatchState,
   ): void {
     for (const player of playerTroops) {
       if (player.state !== 'WALKING') continue;
@@ -63,28 +65,12 @@ export class CombatSystem {
       }
     }
 
-    // Two-pass damage so mutual kills resolve in the same tick.
-    const pendingDamage = new Map<Damageable, number>();
-    const playerAttacks = new Set<Damageable>();
     for (const troop of [...playerTroops, ...enemyTroops]) {
       if (troop.state !== 'ATTACKING' || !troop.currentTarget) continue;
       troop.attackTimer += delta;
       if (troop.attackTimer >= troop.attackInterval) {
-        if (playerTroops.includes(troop)) playerAttacks.add(troop.currentTarget);
-        const current = pendingDamage.get(troop.currentTarget) ?? 0;
-        pendingDamage.set(troop.currentTarget, current + troop.damage);
+        this.spawnProjectile(troop, troop.currentTarget as ProjectileTarget);
         troop.attackTimer = 0;
-      }
-    }
-    const enemyTroopSet = new Set<Damageable>(enemyTroops);
-    for (const [target, damage] of pendingDamage) {
-      target.takeDamage(damage);
-      if (playerAttacks.has(target)) {
-        if (target === enemyTower) {
-          matchState.towerDamageDealt += damage;
-        } else if (enemyTroopSet.has(target)) {
-          matchState.troopDamageDealt += damage;
-        }
       }
     }
 
