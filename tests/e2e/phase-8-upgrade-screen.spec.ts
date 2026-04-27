@@ -8,7 +8,7 @@ type SceneShape = {
   playerTower: { currentHp: number; maxHp: number };
   incomeSystem: { rate: number };
   gameState: { enemyLevel: number; money: number; upgrades: { incomeRate: number; towerMaxHp: number } };
-  matchState: { money: number; troopsDefeated: number; towerDamageDealt: number };
+  matchState: { money: number; troopDamageDealt: number; towerDamageDealt: number };
   spawnTroop: (side: string, type: string) => void;
   resetMatch: () => void;
 };

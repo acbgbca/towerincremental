@@ -1,12 +1,12 @@
 import { test, expect, type Page } from '@playwright/test';
-import { TOWER, BOARD_WIDTH, TOWER_MARGIN, TOWER_WIDTH, TROOP_BASE, REWARD_PER_KILL, REWARD_PER_TOWER_DAMAGE } from '../../src/config/gameConfig';
+import { TOWER, BOARD_WIDTH, TOWER_MARGIN, TOWER_WIDTH, TROOP_BASE, REWARD_PER_TROOP_DAMAGE, REWARD_PER_TOWER_DAMAGE } from '../../src/config/gameConfig';
 
 type SceneShape = {
   sys: { settings: { active: boolean } };
   enemyTower: { currentHp: number };
   playerTower: { currentHp: number };
   gameState: { enemyLevel: number; money: number };
-  matchState: { troopsDefeated: number; towerDamageDealt: number };
+  matchState: { troopDamageDealt: number; towerDamageDealt: number };
   spawnTroop: (side: string, type: string) => void;
   resetMatch: () => void;
 };
@@ -60,7 +60,7 @@ test('Winning a match shows reward in overlay and updates bank in HUD', async ({
   });
 
   const expectedReward = Math.floor(
-    (matchState?.troopsDefeated ?? 0) * REWARD_PER_KILL +
+    (matchState?.troopDamageDealt ?? 0) * REWARD_PER_TROOP_DAMAGE +
     (matchState?.towerDamageDealt ?? 0) * REWARD_PER_TOWER_DAMAGE,
   );
 

@@ -93,13 +93,12 @@ export class CombatSystem {
     }
     const enemyTroopSet = new Set<Damageable>(enemyTroops);
     for (const [target, damage] of pendingDamage) {
-      const wasAlive = target.isAlive();
       target.takeDamage(damage);
       if (playerAttacks.has(target)) {
         if (target === enemyTower) {
           matchState.towerDamageDealt += damage;
-        } else if (wasAlive && !target.isAlive() && enemyTroopSet.has(target)) {
-          matchState.troopsDefeated++;
+        } else if (enemyTroopSet.has(target)) {
+          matchState.troopDamageDealt += damage;
         }
       }
     }

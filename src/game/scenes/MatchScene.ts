@@ -30,7 +30,7 @@ export class MatchScene extends Phaser.Scene {
   enemyTroops: Troop[] = [];
   playerTower!: Tower;
   enemyTower!: Tower;
-  matchState: MatchState = { money: 0, troopsDefeated: 0, towerDamageDealt: 0 };
+  matchState: MatchState = { money: 0, troopDamageDealt: 0, towerDamageDealt: 0 };
   waveSystem!: WaveSystem;
   gameState!: GameState;
   private waveConfig: MatchWaveConfig = EMPTY_WAVES;
@@ -120,7 +120,7 @@ export class MatchScene extends Phaser.Scene {
     this.playerTower.resetHp(playerMaxHp);
     this.enemyTower.resetHp();
     this.matchState.money = 0;
-    this.matchState.troopsDefeated = 0;
+    this.matchState.troopDamageDealt = 0;
     this.matchState.towerDamageDealt = 0;
     this.matchEnded = false;
     this.incomeSystem = new IncomeSystem(this.matchState, incomeRate);

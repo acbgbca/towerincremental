@@ -19,7 +19,7 @@ export const TOWER = {
 
 export const ENEMY_LEVEL_STAT_STEP = { hp: 25, damage: 5 };
 
-export const REWARD_PER_KILL = 5;
+export const REWARD_PER_TROOP_DAMAGE = 0.05;
 export const REWARD_PER_TOWER_DAMAGE = 0.2;
 
 export const PRESTIGE_COST = 1000;
