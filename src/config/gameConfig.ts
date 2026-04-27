@@ -24,7 +24,7 @@ export const REWARD_PER_TOWER_DAMAGE = 0.2;
 
 export const PRESTIGE_COST = 1000;
 
-export const UNLOCK_COST_RUNNER = UNLOCK_COSTS.runner!;
+export const UNLOCK_COST_ARCHER = UNLOCK_COSTS.archer!;
 export const UNLOCK_COST_TANK = UNLOCK_COSTS.tank!;
 
 export function effectivePlayerStats(type: TroopType, prestigeTier: number): TroopStats {

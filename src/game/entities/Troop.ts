@@ -55,6 +55,10 @@ export class Troop implements Damageable {
     return this.stats.attackInterval;
   }
 
+  get range(): number {
+    return this.stats.range;
+  }
+
   isAlive(): boolean {
     return this.state !== 'DEAD';
   }
