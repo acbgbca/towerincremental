@@ -4,13 +4,16 @@ import { drawTroop, drawTroopHpBar, type HpBar } from '../../render/shapes';
 import type { Side } from '../../render/shapes';
 import type { TroopType, TroopState, TroopStats, Damageable } from '../types';
 
+let nextTroopId = 1;
+
 export class Troop implements Damageable {
   private rect: Phaser.GameObjects.Rectangle;
   private hpBar: HpBar;
-  private direction: number;
   private scene: Phaser.Scene;
   private stats: TroopStats;
 
+  readonly id: number;
+  readonly direction: number;
   state: TroopState = 'WALKING';
   currentHp: number;
   readonly maxHp: number;
@@ -25,6 +28,7 @@ export class Troop implements Damageable {
     this.stats = stats;
     this.type = type;
     this.side = side;
+    this.id = nextTroopId++;
     this.direction = side === 'player' ? 1 : -1;
     const hpBarYOffset = stats.height / 2 + 6;
     this.rect = drawTroop(scene, side, type, x, y);
@@ -39,6 +43,10 @@ export class Troop implements Damageable {
 
   get y(): number {
     return this.rect.y;
+  }
+
+  set y(value: number) {
+    this.rect.y = value;
   }
 
   get width(): number {

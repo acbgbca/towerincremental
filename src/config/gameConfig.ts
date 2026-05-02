@@ -10,6 +10,11 @@ export const LANE_BAND = {
   height: 200,
 } as const;
 
+// Steering avoidance: friendly troops walking into a blocked friend slide sideways instead of stacking.
+export const AVOIDANCE_RADIUS = 40;
+export const AVOIDANCE_LOOK_AHEAD_X = 36;
+export const AVOIDANCE_SPEED = 60;
+
 export const TOWER_WIDTH = 60;
 export const TOWER_HEIGHT = 200;
 export const TOWER_MARGIN = 20;
