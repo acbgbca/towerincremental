@@ -5,19 +5,31 @@ import type { Damageable } from '../types';
 
 interface RangeTarget extends Damageable {
   x: number;
+  y: number;
   width: number;
 }
 
-function distanceToNearEdge(self: Troop, target: RangeTarget): number {
-  return Math.abs(self.x - target.x) - target.width / 2;
+interface RangeOrigin {
+  x: number;
+  y: number;
+  range: number;
 }
 
-function pickTarget(
-  self: Troop,
-  troops: Troop[],
-  tower: Tower,
-): ProjectileTarget | null {
-  let best: ProjectileTarget | null = null;
+export function distanceToNearEdge(
+  self: { x: number; y: number },
+  target: { x: number; y: number; width: number },
+): number {
+  const dx = self.x - target.x;
+  const dy = self.y - target.y;
+  return Math.hypot(dx, dy) - target.width / 2;
+}
+
+export function pickTarget(
+  self: RangeOrigin,
+  troops: RangeTarget[],
+  tower: RangeTarget,
+): RangeTarget | null {
+  let best: RangeTarget | null = null;
   let bestDist = Infinity;
   for (const candidate of troops) {
     if (!candidate.isAlive()) continue;
