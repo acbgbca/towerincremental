@@ -7,6 +7,7 @@ import {
   TOWER_WIDTH,
   INCOME_RATE,
   TOWER,
+  LANE_BAND,
   effectivePlayerStats,
   effectiveEnemyStats,
 } from '../../config/gameConfig';
@@ -103,7 +104,9 @@ export class MatchScene extends Phaser.Scene {
       side === 'player'
         ? TOWER_MARGIN + TOWER_WIDTH
         : BOARD_WIDTH - TOWER_MARGIN - TOWER_WIDTH;
-    const y = BOARD_HEIGHT / 2;
+    const y = window.location.search.includes('test')
+      ? LANE_BAND.centerY
+      : LANE_BAND.centerY + (Math.random() - 0.5) * LANE_BAND.height;
     const stats =
       side === 'enemy'
         ? effectiveEnemyStats(type, this.gameState.enemyLevel)

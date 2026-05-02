@@ -4,6 +4,12 @@ import { TROOP_TYPES, UNLOCK_COSTS } from './troopTypes';
 export const BOARD_WIDTH = 1280;
 export const BOARD_HEIGHT = 720;
 
+// Vertical engagement zone: troops jitter within this band so the action stays visually concentrated.
+export const LANE_BAND = {
+  centerY: 360,
+  height: 200,
+} as const;
+
 export const TOWER_WIDTH = 60;
 export const TOWER_HEIGHT = 200;
 export const TOWER_MARGIN = 20;
