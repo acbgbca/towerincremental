@@ -19,6 +19,7 @@ import { Projectile, type ProjectileTarget, type ProjectileImpact } from '../ent
 import { CombatSystem } from '../systems/CombatSystem';
 import { IncomeSystem } from '../systems/IncomeSystem';
 import { WaveSystem } from '../systems/WaveSystem';
+import { applyAvoidance } from '../systems/MovementSystem';
 import { computeReward } from '../systems/RewardSystem';
 import { MenuScreen } from '../../ui/MenuScreen';
 
@@ -104,9 +105,7 @@ export class MatchScene extends Phaser.Scene {
       side === 'player'
         ? TOWER_MARGIN + TOWER_WIDTH
         : BOARD_WIDTH - TOWER_MARGIN - TOWER_WIDTH;
-    const y = window.location.search.includes('test')
-      ? LANE_BAND.centerY
-      : LANE_BAND.centerY + (Math.random() - 0.5) * LANE_BAND.height;
+    const y = LANE_BAND.centerY;
     const stats =
       side === 'enemy'
         ? effectiveEnemyStats(type, this.gameState.enemyLevel)
@@ -124,6 +123,8 @@ export class MatchScene extends Phaser.Scene {
 
     this.incomeSystem.update(delta);
     this.waveSystem.update(delta);
+    applyAvoidance(this.playerTroops, delta);
+    applyAvoidance(this.enemyTroops, delta);
     this.playerTroops.forEach((t) => t.update(delta));
     this.enemyTroops.forEach((t) => t.update(delta));
 
