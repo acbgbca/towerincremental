@@ -6,19 +6,29 @@ import { showConfirmDialog } from './ConfirmDialog';
 import type { GameState } from '../state/GameState';
 import type { TroopType } from '../game/types';
 
-export class UpgradeScreen {
+export interface MatchResultDisplay {
+  winner: 'player' | 'enemy';
+  reward: number;
+}
+
+export interface MenuShowOptions {
+  matchResult?: MatchResultDisplay;
+}
+
+export class MenuScreen {
   private el: HTMLDivElement;
   private messageEl: HTMLParagraphElement;
   private rewardEl: HTMLParagraphElement;
   private bankEl: HTMLParagraphElement;
+  private enemyLevelEl: HTMLParagraphElement;
+  private prestigeTierEl: HTMLParagraphElement;
   private rowsEl: HTMLDivElement;
+  private primaryBtn: HTMLButtonElement;
   private prestigeBtn: HTMLButtonElement;
+  private onContinue: () => void = () => {};
+  private onPrestige: () => void = () => {};
 
-  constructor(
-    private gameState: GameState,
-    private onContinue: () => void,
-    private onPrestige: () => void,
-  ) {
+  constructor(private gameState: GameState) {
     const existing = document.getElementById('match-result-overlay');
     if (existing) existing.remove();
 
@@ -39,14 +49,20 @@ export class UpgradeScreen {
     this.bankEl.id = 'upgrade-screen-bank';
     this.bankEl.style.cssText = 'color:#fff;font-size:22px;margin:0;';
 
+    this.enemyLevelEl = document.createElement('p');
+    this.enemyLevelEl.id = 'menu-screen-enemy-level';
+    this.enemyLevelEl.style.cssText = 'color:#fff;font-size:18px;margin:0;';
+
+    this.prestigeTierEl = document.createElement('p');
+    this.prestigeTierEl.id = 'menu-screen-prestige-tier';
+    this.prestigeTierEl.style.cssText = 'color:#ffaaff;font-size:18px;margin:0;';
+
     this.rowsEl = document.createElement('div');
     this.rowsEl.style.cssText = 'display:flex;flex-direction:column;gap:12px;min-width:360px;';
 
-    const continueBtn = document.createElement('button');
-    continueBtn.id = 'upgrade-screen-continue';
-    continueBtn.textContent = 'Continue';
-    continueBtn.style.cssText = 'font-size:24px;padding:12px 32px;cursor:pointer;margin-top:8px;';
-    continueBtn.addEventListener('click', () => {
+    this.primaryBtn = document.createElement('button');
+    this.primaryBtn.style.cssText = 'font-size:24px;padding:12px 32px;cursor:pointer;margin-top:8px;';
+    this.primaryBtn.addEventListener('click', () => {
       this.hide();
       this.onContinue();
     });
@@ -58,15 +74,39 @@ export class UpgradeScreen {
     this.el.appendChild(this.messageEl);
     this.el.appendChild(this.rewardEl);
     this.el.appendChild(this.bankEl);
+    this.el.appendChild(this.enemyLevelEl);
+    this.el.appendChild(this.prestigeTierEl);
     this.el.appendChild(this.rowsEl);
-    this.el.appendChild(continueBtn);
+    this.el.appendChild(this.primaryBtn);
     this.el.appendChild(this.prestigeBtn);
     document.body.appendChild(this.el);
   }
 
-  show(winner: 'player' | 'enemy', reward: number): void {
-    this.messageEl.textContent = winner === 'player' ? 'You won!' : 'You lost!';
-    this.rewardEl.textContent = `Earned: $${reward}`;
+  setContinueHandler(fn: () => void): void {
+    this.onContinue = fn;
+  }
+
+  setPrestigeHandler(fn: () => void): void {
+    this.onPrestige = fn;
+  }
+
+  show(opts?: MenuShowOptions): void {
+    if (opts?.matchResult) {
+      this.messageEl.textContent =
+        opts.matchResult.winner === 'player' ? 'You won!' : 'You lost!';
+      this.rewardEl.textContent = `Earned: $${opts.matchResult.reward}`;
+      this.messageEl.style.display = '';
+      this.rewardEl.style.display = '';
+      this.primaryBtn.id = 'upgrade-screen-continue';
+      this.primaryBtn.textContent = 'Continue';
+    } else {
+      this.messageEl.textContent = '';
+      this.rewardEl.textContent = '';
+      this.messageEl.style.display = 'none';
+      this.rewardEl.style.display = 'none';
+      this.primaryBtn.id = 'menu-screen-start';
+      this.primaryBtn.textContent = 'Start Game';
+    }
     this.render();
     this.el.style.display = 'flex';
   }
@@ -81,6 +121,8 @@ export class UpgradeScreen {
 
   private render(): void {
     this.bankEl.textContent = `Bank: $${Math.floor(this.gameState.money)}`;
+    this.enemyLevelEl.textContent = `Enemy Level: ${this.gameState.enemyLevel}`;
+    this.prestigeTierEl.textContent = `Prestige Tier: ${this.gameState.prestigeTier}`;
     this.rowsEl.innerHTML = '';
     for (const def of UPGRADES) {
       this.rowsEl.appendChild(this.buildUpgradeRow(def));

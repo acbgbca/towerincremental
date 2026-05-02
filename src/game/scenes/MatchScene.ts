@@ -19,7 +19,18 @@ import { CombatSystem } from '../systems/CombatSystem';
 import { IncomeSystem } from '../systems/IncomeSystem';
 import { WaveSystem } from '../systems/WaveSystem';
 import { computeReward } from '../systems/RewardSystem';
-import { UpgradeScreen } from '../../ui/UpgradeScreen';
+import { MenuScreen } from '../../ui/MenuScreen';
+
+let sharedMenuScreen: MenuScreen | null = null;
+
+export function setSharedMenuScreen(menu: MenuScreen): void {
+  sharedMenuScreen = menu;
+}
+
+function getSharedMenuScreen(gameState: GameState): MenuScreen {
+  if (!sharedMenuScreen) sharedMenuScreen = new MenuScreen(gameState);
+  return sharedMenuScreen;
+}
 import { Hud } from '../../ui/Hud';
 import { UPGRADES, effectiveValue } from '../../config/upgradeConfig';
 import { load as loadSave, save as persistSave } from '../../state/SaveStore';
@@ -38,7 +49,7 @@ export class MatchScene extends Phaser.Scene {
   private waveConfig: MatchWaveConfig = EMPTY_WAVES;
   private combatSystem = new CombatSystem((attacker, target) => this.spawnProjectile(attacker, target));
   incomeSystem!: IncomeSystem;
-  private overlay!: UpgradeScreen;
+  private overlay!: MenuScreen;
   private hud!: Hud;
   private matchEnded = false;
 
@@ -54,11 +65,9 @@ export class MatchScene extends Phaser.Scene {
     const incomeRate  = effectiveValue(UPGRADES[0], INCOME_RATE, this.gameState.upgrades.incomeRate);
     this.playerTower = new Tower(this, 'player', playerMaxHp);
     this.enemyTower = new Tower(this, 'enemy');
-    this.overlay = new UpgradeScreen(
-      this.gameState,
-      () => this.resetMatch(),
-      () => this.resetMatch(),
-    );
+    this.overlay = getSharedMenuScreen(this.gameState);
+    this.overlay.setContinueHandler(() => this.resetMatch());
+    this.overlay.setPrestigeHandler(() => this.resetMatch());
     this.incomeSystem = new IncomeSystem(this.matchState, incomeRate);
     this.waveConfig = window.location.search.includes('test')
       ? EMPTY_WAVES
@@ -174,7 +183,7 @@ export class MatchScene extends Phaser.Scene {
     }
     persistSave(this.gameState);
     this.events.emit('match:end', result);
-    this.overlay.show(winner, reward);
+    this.overlay.show({ matchResult: { winner, reward } });
   }
 
   private cleanupTroops(troops: Troop[]): Troop[] {
