@@ -24,6 +24,10 @@ type GameWindow = Window & {
 async function waitForMatch(page: Page) {
   await page.goto('/');
   await expect(page.locator('canvas')).toBeVisible({ timeout: 10_000 });
+  const startBtn = page.locator('#menu-screen-start');
+  if (await startBtn.count()) {
+    await startBtn.click();
+  }
   await page.waitForFunction(
     () => (window as GameWindow).__game__?.scene.getScene('Match')?.sys.settings.active === true,
     { timeout: 15_000 },
