@@ -22,21 +22,31 @@ import { WaveSystem } from '../systems/WaveSystem';
 import { applyAvoidance } from '../systems/MovementSystem';
 import { computeReward } from '../systems/RewardSystem';
 import { MenuScreen } from '../../ui/MenuScreen';
+import { Hud } from '../../ui/Hud';
+import { UPGRADES, effectiveValue } from '../../config/upgradeConfig';
+import { load as loadSave, save as persistSave } from '../../state/SaveStore';
+import type { GameState } from '../../state/GameState';
 
 let sharedMenuScreen: MenuScreen | null = null;
+let sharedGameState: GameState | null = null;
 
 export function setSharedMenuScreen(menu: MenuScreen): void {
   sharedMenuScreen = menu;
+}
+
+export function setSharedGameState(state: GameState): void {
+  sharedGameState = state;
 }
 
 function getSharedMenuScreen(gameState: GameState): MenuScreen {
   if (!sharedMenuScreen) sharedMenuScreen = new MenuScreen(gameState);
   return sharedMenuScreen;
 }
-import { Hud } from '../../ui/Hud';
-import { UPGRADES, effectiveValue } from '../../config/upgradeConfig';
-import { load as loadSave, save as persistSave } from '../../state/SaveStore';
-import type { GameState } from '../../state/GameState';
+
+function getSharedGameState(): GameState {
+  if (!sharedGameState) sharedGameState = loadSave();
+  return sharedGameState;
+}
 import type { TroopType, MatchResult, MatchState, MatchWaveConfig } from '../types';
 
 export class MatchScene extends Phaser.Scene {
@@ -60,7 +70,7 @@ export class MatchScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.gameState = loadSave();
+    this.gameState = getSharedGameState();
 
     this.add.rectangle(BOARD_WIDTH / 2, BOARD_HEIGHT / 2, BOARD_WIDTH, BOARD_HEIGHT, FIELD);
     const playerMaxHp = effectiveValue(UPGRADES[1], TOWER.maxHp, this.gameState.upgrades.towerMaxHp);
