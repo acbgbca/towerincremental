@@ -25,8 +25,10 @@ export class MenuScreen {
   private rowsEl: HTMLDivElement;
   private primaryBtn: HTMLButtonElement;
   private prestigeBtn: HTMLButtonElement;
+  private settingsBtn: HTMLButtonElement;
   private onContinue: () => void = () => {};
   private onPrestige: () => void = () => {};
+  private onSettings: () => void = () => {};
 
   constructor(private gameState: GameState) {
     const existing = document.getElementById('match-result-overlay');
@@ -71,6 +73,15 @@ export class MenuScreen {
     this.prestigeBtn.id = 'upgrade-screen-prestige';
     this.prestigeBtn.addEventListener('click', () => this.handlePrestige());
 
+    this.settingsBtn = document.createElement('button');
+    this.settingsBtn.id = 'menu-screen-settings';
+    this.settingsBtn.textContent = 'Settings';
+    this.settingsBtn.style.cssText = 'font-size:16px;padding:8px 20px;cursor:pointer;';
+    this.settingsBtn.addEventListener('click', () => {
+      this.hide();
+      this.onSettings();
+    });
+
     this.el.appendChild(this.messageEl);
     this.el.appendChild(this.rewardEl);
     this.el.appendChild(this.bankEl);
@@ -79,6 +90,7 @@ export class MenuScreen {
     this.el.appendChild(this.rowsEl);
     this.el.appendChild(this.primaryBtn);
     this.el.appendChild(this.prestigeBtn);
+    this.el.appendChild(this.settingsBtn);
     document.body.appendChild(this.el);
   }
 
@@ -88,6 +100,10 @@ export class MenuScreen {
 
   setPrestigeHandler(fn: () => void): void {
     this.onPrestige = fn;
+  }
+
+  setSettingsHandler(fn: () => void): void {
+    this.onSettings = fn;
   }
 
   show(opts?: MenuShowOptions): void {
