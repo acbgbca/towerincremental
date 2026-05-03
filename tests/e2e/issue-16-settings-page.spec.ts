@@ -239,6 +239,58 @@ test('Confirming Decrease prestige decrements and persists', async ({ page }) =>
   await expect(page.locator('#menu-screen-prestige-tier')).toContainText('Prestige Tier: 2');
 });
 
+test('Settings reset propagates to in-match HUD when re-entering a match', async ({ page }) => {
+  await page.goto('/');
+  await page.evaluate(() => localStorage.clear());
+  await seedSave(page, {
+    money: 500,
+    enemyLevel: 1,
+    unlockedTroopTypes: ['base', 'archer'],
+  });
+  await page.reload();
+
+  // Start a match — MatchScene.create() loads gameState
+  await expect(page.locator('#menu-screen-start')).toBeVisible();
+  await page.locator('#menu-screen-start').click();
+  await page.waitForFunction(
+    () =>
+      (window as unknown as {
+        __game__?: { scene: { getScene: (k: string) => { sys: { settings: { active: boolean } } } | null } };
+      }).__game__?.scene.getScene('Match')?.sys.settings.active === true,
+    { timeout: 10_000 },
+  );
+
+  // HUD reflects the seeded state mid-match
+  await expect(page.locator('#hud-bank')).toContainText('Bank: $500');
+  await expect(page.locator('#hud-spawn-archer')).toBeVisible();
+
+  // Force player win to surface the post-match menu
+  await page.evaluate(() => {
+    const game = (
+      window as unknown as {
+        __game__: { scene: { getScene: (k: string) => { enemyTower: { takeDamage: (n: number) => void } } } };
+      }
+    ).__game__;
+    game.scene.getScene('Match').enemyTower.takeDamage(99999);
+  });
+  await expect(page.locator('#match-result-overlay')).toBeVisible();
+
+  // Open Settings from the post-match overlay and reset the save
+  await page.locator('#menu-screen-settings').click();
+  await expect(page.locator('#settings-screen')).toBeVisible();
+  await page.locator('#settings-reset-game').click();
+  await page.locator('#settings-reset-confirm .confirm-dialog-confirm').click();
+
+  // Re-enter the match via the menu primary button
+  await expect(page.locator('#menu-screen-start')).toBeVisible();
+  await page.locator('#menu-screen-start').click();
+
+  // HUD must reflect the reset state, not the stale pre-reset state
+  await expect(page.locator('#hud-bank')).toContainText('Bank: $0');
+  await expect(page.locator('#hud-spawn-archer')).toHaveCount(0);
+  await expect(page.locator('#hud-spawn-base')).toBeVisible();
+});
+
 test('State changes from settings persist across reload', async ({ page }) => {
   await page.goto('/');
   await page.evaluate(() => localStorage.clear());

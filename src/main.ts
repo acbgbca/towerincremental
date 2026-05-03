@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { BootScene } from './game/scenes/BootScene';
-import { MatchScene, setSharedMenuScreen } from './game/scenes/MatchScene';
+import { MatchScene, setSharedMenuScreen, setSharedGameState } from './game/scenes/MatchScene';
 import { BOARD_WIDTH, BOARD_HEIGHT } from './config/gameConfig';
 import { createDebugSpawnButtons } from './ui/DebugSpawnButtons';
 import { LaunchController } from './ui/LaunchController';
@@ -28,6 +28,7 @@ if (import.meta.env.DEV || window.location.search.includes('test')) {
 
 if (!window.location.search.includes('test')) {
   const gameState = loadSave();
+  setSharedGameState(gameState);
   const launch = new LaunchController(game, gameState);
   setSharedMenuScreen(launch.menuScreen);
   launch.start();
